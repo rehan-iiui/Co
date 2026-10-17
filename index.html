@@ -659,11 +659,12 @@ function applyAIChanges(result){
   const path=edit.path.replace(/\\/g,"/");
   if(!path||path.startsWith("/")||path.split("/").some(part=>part===".."||part==="."||!part))return{ok:false,error:"The AI proposed an unsafe file path."};
   if(edit.action==="create"){
-   if(Object.prototype.hasOwnProperty.call(updated,path))return{ok:false,error:"The AI tried to create an existing file: "+path};
+   if(Object.prototype.hasOwnProperty.call(updated,path)&&String(updated[path]).trim()!=="")return{ok:false,error:"The AI tried to create an existing file: "+path};
    if(typeof edit.content!=="string")return{ok:false,error:"The new file content was missing for "+path};
    updated[path]=edit.content;continue;
   }
   if(!Object.prototype.hasOwnProperty.call(updated,path))return{ok:false,error:"The AI referenced a file that does not exist: "+path};
+  if(edit.find===""&&typeof edit.replace==="string"&&String(updated[path]).trim()===""){updated[path]=edit.replace;continue;}
   if(typeof edit.find!=="string"||!edit.find.length||typeof edit.replace!=="string")return{ok:false,error:"An edit was missing its exact find/replace text."};
   const content=String(updated[path]),first=content.indexOf(edit.find);
   if(first<0)return{ok:false,error:"Couldn't find the exact code snippet in "+path+". Ask the AI to try again with a more precise match."};
