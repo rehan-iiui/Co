@@ -437,13 +437,19 @@ function getPreviewHTML(){
 
 /* This function performs the actual iframe refresh. */
 function refreshPreviewFrame(){
- const frame=$("previewFrame");
- if(!frame)return;
+ const old=$("previewFrame");
+ if(!old)return;
 
  const previewHTML=getPreviewHTML();
 
- frame.srcdoc="";
- setTimeout(()=>{frame.srcdoc=previewHTML},30);
+ // Recreate the iframe each time so the app always loads fresh.
+ const frame=document.createElement("iframe");
+ frame.id="previewFrame";
+ frame.className=old.className;
+ frame.title=old.title;
+ frame.setAttribute("sandbox",old.getAttribute("sandbox")||"allow-scripts allow-forms allow-modals allow-downloads");
+ frame.srcdoc=previewHTML;
+ old.replaceWith(frame);
 }
 
 /* Run and Refresh both use the same refresh function.
