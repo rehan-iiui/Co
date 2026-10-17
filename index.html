@@ -404,10 +404,11 @@ function getPreviewHTML(){
 
  if(files["index.html"]!==undefined && String(files["index.html"]).trim()){
   html=String(files["index.html"]);
- }else if(/\.(html?|HTML?)$/i.test(activeFilePath) && files[activeFilePath]!==undefined){
+ }else if(/\.(html?|HTML?)$/i.test(activeFilePath) && files[activeFilePath]!==undefined && String(files[activeFilePath]).trim()){
   html=String(files[activeFilePath]);
- }else if(files["index.html"]!==undefined){
-  html=String(files["index.html"]);
+ }else{
+  const other=Object.keys(files).find(p=>/\.html?$/i.test(p)&&String(files[p]).trim());
+  if(other)html=String(files[other]);
  }
 
  if(!html.trim())return "";
@@ -422,13 +423,13 @@ function getPreviewHTML(){
 
  if(css){
   const styleTag=`<style>${css.replace(/<\/style/gi,"<\\/style")}</style>`;
-  if(/<\/head>/i.test(html))html=html.replace(/<\/head>/i,styleTag+"</head>");
+  if(/<\/head>/i.test(html))html=html.replace(/<\/head>/i,()=>styleTag+"</head>");
   else html=styleTag+html;
  }
 
  if(js){
   const scriptTag=`<script>${js.replace(/<\/script/gi,"<\\/script")}<\/script>`;
-  if(/<\/body>/i.test(html))html=html.replace(/<\/body>/i,scriptTag+"</body>");
+  if(/<\/body>/i.test(html))html=html.replace(/<\/body>/i,()=>scriptTag+"</body>");
   else html+=scriptTag;
  }
  return html;
@@ -441,8 +442,8 @@ function refreshPreviewFrame(){
 
  const previewHTML=getPreviewHTML();
 
- // Setting srcdoc directly is reliable in the preview iframe.
- frame.srcdoc=previewHTML;
+ frame.srcdoc="";
+ setTimeout(()=>{frame.srcdoc=previewHTML},30);
 }
 
 /* Run and Refresh both use the same refresh function.
