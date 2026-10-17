@@ -183,10 +183,22 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
       <button title="Export complete project as ZIP" onclick="exportProject()">▣ ZIP</button>
     </div>
     <div class="tabs" id="fileTabs"></div>
-    <div class="editor-area"><div class="editor-wrap"><div id="lineNumbers" class="line-numbers">1</div><textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code editor" placeholder="Write your code here..." oninput="onEditorInput()" onscroll="syncLineNumbers()" onkeydown="editorKeydown(event)"></textarea></div>
+    <div class="editor-area">
+      <div class="editor-wrap">
+        <div id="lineNumbers" class="line-numbers">1</div>
+        <textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code editor" placeholder="Write your code here..." oninput="onEditorInput()" onscroll="syncLineNumbers()" onkeydown="editorKeydown(event)"></textarea>
+      </div>
       <div class="editor-footer"><span id="languageLabel">HTML</span><span id="cursorLabel">Ln 1, Col 1</span><span id="lineCount">1 line</span><span style="margin-left:auto">UTF-8</span></div>
     </div>
-    <div class="preview-area" id="previewArea"><div style="height:40px;display:flex;align-items:center;padding:0 12px;gap:8px;background:#10131b;border-bottom:1px solid var(--line)"><span class="dot"></span><span class="small">Live preview</span><div style="flex:1"></div><button onclick="runPreview()">↻ Refresh</button><button onclick="openPreviewTab()">↗ Open separately</button></div><div class="preview-frame-wrap"><iframe id="previewFrame" class="preview-frame" title="App preview" sandbox="allow-scripts allow-forms allow-modals allow-downloads" srcdoc=""></iframe></div><div class="preview-bottom"><span>Sandboxed browser preview</span><span style="margin-left:auto">Your project stays in this workspace</span></div></div>
+    <div class="preview-area" id="previewArea">
+      <div style="height:40px;display:flex;align-items:center;padding:0 12px;gap:8px;background:#10131b;border-bottom:1px solid var(--line)">
+        <span class="dot"></span><span class="small">Live preview</span><div style="flex:1"></div>
+        <button id="refreshPreviewBtn" onclick="runPreview()">↻ Refresh</button>
+        <button onclick="openPreviewTab()">↗ Open separately</button>
+      </div>
+      <div class="preview-frame-wrap"><iframe id="previewFrame" class="preview-frame" title="App preview" sandbox="allow-scripts allow-forms allow-modals allow-downloads" srcdoc=""></iframe></div>
+      <div class="preview-bottom"><span>Sandboxed browser preview</span><span style="margin-left:auto">Your project stays in this workspace</span></div>
+    </div>
   </main>
   <aside class="panel right-panel">
     <div class="panel-head"><span>✦ AI Assistant</span><button class="ghost" onclick="clearChat()" title="Clear conversation">↺</button></div>
@@ -213,25 +225,34 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <div class="overlay" id="renameModal"><div class="modal"><h2>Rename project</h2><label for="renameInput">Project name</label><input id="renameInput" maxlength="70"><div class="modal-actions"><button onclick="closeModal('renameModal')">Cancel</button><button class="primary" onclick="renameProject()">Save name</button></div></div></div>
 <div class="overlay" id="reviewModal"><div class="modal"><h2>UI/UX review</h2><p>Choose the kind of review you want the AI to perform.</p><label for="reviewScope">Review scope</label><select id="reviewScope"><option value="full">Whole project</option><option value="current">Current file only</option><option value="responsive">Responsive design and mobile</option><option value="accessibility">Accessibility and usability</option><option value="visual">Visual polish and design consistency</option></select><div class="modal-actions"><button onclick="closeModal('reviewModal')">Cancel</button><button class="primary" onclick="startReview()">Review with AI</button></div></div></div>
 <div class="toast" id="toast"></div>
+
 <script>
 "use strict";
+
 const STORAGE_KEY="codestudio_ai_projects_v1",ACTIVE_KEY="codestudio_ai_active_v1";
 let projects=[],activeProjectId=null,activeFilePath="index.html",aiMode="write",currentView="editor",mobilePanel="editor",renameTargetId=null,isThinking=false,toastTimer=null,chatHistory=[],lastPreviewUrl=null;
 const $=id=>document.getElementById(id);
 const starterHTML="",starterCSS="",starterJS="";
+
 function uid(){return "p_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+
 function makeProject(name,template){
  let files={};
- if(template==="landing"){files["index.html"]='<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Landing Page</title></head>\n<body><main><h1>Build something great.</h1><p>Start editing this page.</p></main></body></html>';files["style.css"]="body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111827;color:white;font:18px system-ui}main{text-align:center;padding:30px}";}
- else if(template==="game"){files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mini Game</title></head><body><h1>Mini Game</h1><button id="play">Play</button><p id="score"></p></body></html>';files["script.js"]='document.getElementById("play").onclick=()=>document.getElementById("score").textContent="It works!";';}
- else if(template==="calculator"){files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Calculator</title></head><body><input id="a" type="number"><input id="b" type="number"><button id="sum">Add</button><p id="result"></p></body></html>';files["script.js"]='document.getElementById("sum").onclick=()=>document.getElementById("result").textContent=Number(document.getElementById("a").value)+Number(document.getElementById("b").value);';}
- else if(template==="portfolio"){files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio</title></head><body><h1>Your Name</h1><p>My portfolio.</p></body></html>'}
- else files["index.html"]="";
+ if(template==="landing"){
+  files["index.html"]='<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Landing Page</title></head>\n<body><main><h1>Build something great.</h1><p>Start editing this page.</p></main></body></html>';
+  files["style.css"]="body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111827;color:white;font:18px system-ui}main{text-align:center;padding:30px}";
+ }else if(template==="game"){
+  files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mini Game</title></head><body><h1>Mini Game</h1><button id="play">Play</button><p id="score"></p></body></html>';
+  files["script.js"]='document.getElementById("play").onclick=()=>document.getElementById("score").textContent="It works!";';
+ }else if(template==="calculator"){
+  files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Calculator</title></head><body><input id="a" type="number"><input id="b" type="number"><button id="sum">Add</button><p id="result"></p></body></html>';
+  files["script.js"]='document.getElementById("sum").onclick=()=>document.getElementById("result").textContent=Number(document.getElementById("a").value)+Number(document.getElementById("b").value);';
+ }else if(template==="portfolio"){
+  files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio</title></head><body><h1>Your Name</h1><p>My portfolio.</p></body></html>';
+ }else files["index.html"]="";
  return{id:uid(),name,files,activeFile:"index.html",created:Date.now(),updated:Date.now()};
 }
 
-/* FIX: clear the untouched Hello World demo saved by an older version.
-   Other projects and files are preserved. */
 function removeOldHelloWorldDemo(p){
  if(!p||p.name!=="Welcome Project"||!p.files||typeof p.files!=="object")return false;
  const paths=Object.keys(p.files).sort();
@@ -240,11 +261,7 @@ function removeOldHelloWorldDemo(p){
  const expectedFiles=["index.html","script.js","style.css"];
  const onlyDefaultFiles=paths.length===3&&expectedFiles.every(path=>paths.includes(path));
  if(looksLikeHelloWorld&&onlyDefaultFiles){
-  p.name="Code Project";
-  p.files={"index.html":""};
-  p.activeFile="index.html";
-  p.updated=Date.now();
-  return true;
+  p.name="Code Project";p.files={"index.html":""};p.activeFile="index.html";p.updated=Date.now();return true;
  }
  return false;
 }
@@ -252,26 +269,26 @@ function removeOldHelloWorldDemo(p){
 function loadProjects(){
  try{
   const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
-  if(Array.isArray(data)&&data.length){
-   projects=data.filter(p=>p&&p.id&&p.files&&typeof p.files==="object");
-  }
+  if(Array.isArray(data)&&data.length)projects=data.filter(p=>p&&p.id&&p.files&&typeof p.files==="object");
  }catch(e){console.warn(e)}
- if(!projects.length){
-  projects=[makeProject("Code Project","blank")];
-  saveProjects(false);
- }
+ if(!projects.length){projects=[makeProject("Code Project","blank")];saveProjects(false)}
  projects.forEach(removeOldHelloWorldDemo);
  const wanted=localStorage.getItem(ACTIVE_KEY);
  activeProjectId=projects.some(p=>p.id===wanted)?wanted:projects[0].id;
  const p=getProject();
  activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");
- renderAll();
- loadEditor();
- saveProjects(false);
- // Always start with a blank preview. The user can press Run or Refresh to render code.
+ renderAll();loadEditor();saveProjects(false);
  $("previewFrame").srcdoc="";
 }
-function saveProjects(showStatus=true){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(projects));if(activeProjectId)localStorage.setItem(ACTIVE_KEY,activeProjectId);if(showStatus){$("saveStatus").textContent="Saved locally";$("saveStatus").style.color="var(--green)"}return true}catch(e){$("saveStatus").textContent="Storage full";toast("Could not save. Export your project to keep a backup.");return false}}
+
+function saveProjects(showStatus=true){
+ try{
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(projects));
+  if(activeProjectId)localStorage.setItem(ACTIVE_KEY,activeProjectId);
+  if(showStatus){$("saveStatus").textContent="Saved locally";$("saveStatus").style.color="var(--green)"}
+  return true;
+ }catch(e){$("saveStatus").textContent="Storage full";toast("Could not save. Export your project to keep a backup.");return false}
+}
 function getProject(){return projects.find(p=>p.id===activeProjectId)||projects[0]}
 function safeName(n){return String(n||"").trim().replace(/[<>:"|?*\u0000-\u001f]/g,"").slice(0,70)||"Untitled Project"}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -279,10 +296,18 @@ function escapeAttr(s){return escapeHTML(s)}
 function getExtension(path){return path.split(".").pop().toLowerCase()}
 function languageFor(path){const e=getExtension(path);return({html:"HTML",htm:"HTML",css:"CSS",js:"JavaScript",mjs:"JavaScript",json:"JSON",md:"Markdown",py:"Python",txt:"Text",svg:"SVG"})[e]||e.toUpperCase()}
 function iconFor(path){const e=getExtension(path);return({html:"🌐",htm:"🌐",css:"🎨",js:"🟨",mjs:"🟨",json:"{}",md:"▤",py:"🐍",svg:"◇"})[e]||"📄"}
+
 function renderAll(){renderProjects();renderTree();renderTabs();$("topProjectName").textContent=getProject().name}
 function renderProjects(){
  $("projectList").innerHTML="";
- projects.forEach(p=>{const el=document.createElement("div");el.className="project-item"+(p.id===activeProjectId?" active":"");el.innerHTML=`<span>▣</span><span class="project-name" title="${escapeAttr(p.name)}">${escapeHTML(p.name)}</span><button class="mini-action" title="Project options">···</button>`;el.querySelector(".project-name").onclick=()=>switchProject(p.id);el.querySelector("button").onclick=e=>{e.stopPropagation();showProjectOptions(p.id)};$("projectList").appendChild(el)});
+ projects.forEach(p=>{
+  const el=document.createElement("div");
+  el.className="project-item"+(p.id===activeProjectId?" active":"");
+  el.innerHTML=`<span>▣</span><span class="project-name" title="${escapeAttr(p.name)}">${escapeHTML(p.name)}</span><button class="mini-action" title="Project options">···</button>`;
+  el.querySelector(".project-name").onclick=()=>switchProject(p.id);
+  el.querySelector("button").onclick=e=>{e.stopPropagation();showProjectOptions(p.id)};
+  $("projectList").appendChild(el);
+ });
 }
 function renderTree(){
  const p=getProject(),root=$("fileTree");root.innerHTML="";
@@ -290,7 +315,8 @@ function renderTree(){
  paths.forEach(path=>{const parts=path.split("/");for(let i=1;i<parts.length;i++)folders.add(parts.slice(0,i).join("/"))});
  const all=[...folders].map(path=>({path,folder:true})).concat(paths.map(path=>({path,folder:false}))).sort((a,b)=>{const aa=a.path.split("/").length,bb=b.path.split("/").length;if(aa!==bb)return aa-bb;return a.path.localeCompare(b.path)||Number(b.folder)-Number(a.folder)});
  all.forEach(item=>{
-  const row=document.createElement("div");row.className="tree-row"+(item.path===activeFilePath&&!item.folder?" active":"")+(item.folder?" tree-folder":"");
+  const row=document.createElement("div");
+  row.className="tree-row"+(item.path===activeFilePath&&!item.folder?" active":"")+(item.folder?" tree-folder":"");
   row.style.paddingLeft=(6+(item.path.split("/").length-1)*12)+"px";
   row.innerHTML=`<span>${item.folder?"📁":iconFor(item.path)}</span><span class="path">${escapeHTML(item.path.split("/").pop())}</span>${item.folder?"":'<span class="file-actions"><button class="file-delete" title="Delete file" aria-label="Delete '+escapeAttr(item.path)+'">×</button></span>'}`;
   if(!item.folder)row.onclick=()=>switchFile(item.path);
@@ -298,73 +324,216 @@ function renderTree(){
   root.appendChild(row);
  });
 }
-function renderTabs(){const p=getProject();$("fileTabs").innerHTML="";Object.keys(p.files).forEach(path=>{const tab=document.createElement("div");tab.className="tab"+(path===activeFilePath?" active":"");tab.innerHTML=`<span>${iconFor(path)}</span><span>${escapeHTML(path.split("/").pop())}</span>`;tab.title=path;tab.onclick=()=>switchFile(path);$("fileTabs").appendChild(tab)})}
+function renderTabs(){
+ const p=getProject();$("fileTabs").innerHTML="";
+ Object.keys(p.files).forEach(path=>{
+  const tab=document.createElement("div");tab.className="tab"+(path===activeFilePath?" active":"");
+  tab.innerHTML=`<span>${iconFor(path)}</span><span>${escapeHTML(path.split("/").pop())}</span>`;
+  tab.title=path;tab.onclick=()=>switchFile(path);$("fileTabs").appendChild(tab);
+ });
+}
 function loadEditor(){
  const p=getProject(),paths=Object.keys(p.files);
  if(p.files[activeFilePath]===undefined)activeFilePath=paths[0]||"index.html";
  if(p.files[activeFilePath]===undefined){p.files["index.html"]="";activeFilePath="index.html"}
- $("codeEditor").value=p.files[activeFilePath]??"";$("languageLabel").textContent=languageFor(activeFilePath);$("aiContextLabel").textContent="Context: "+activeFilePath;renderAll();syncLineNumbers();updateCursor();
+ $("codeEditor").value=p.files[activeFilePath]??"";
+ $("languageLabel").textContent=languageFor(activeFilePath);
+ $("aiContextLabel").textContent="Context: "+activeFilePath;
+ renderAll();syncLineNumbers();updateCursor();
 }
-function switchProject(id){saveCurrentFile();activeProjectId=id;const p=getProject();activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");chatHistory=[];$("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>New project conversation</h3><p>Ask the AI about this project.</p></div>';saveProjects();renderAll();loadEditor();toast("Opened "+p.name)}
+function switchProject(id){
+ saveCurrentFile();activeProjectId=id;const p=getProject();
+ activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");
+ chatHistory=[];
+ $("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>New project conversation</h3><p>Ask the AI about this project.</p></div>';
+ saveProjects();renderAll();loadEditor();toast("Opened "+p.name);
+}
 function switchFile(path){saveCurrentFile();activeFilePath=path;getProject().activeFile=path;saveProjects();loadEditor()}
-function saveCurrentFile(){if(!activeProjectId||!getProject())return;getProject().files[activeFilePath]=$("codeEditor").value;getProject().activeFile=activeFilePath;getProject().updated=Date.now()}
+function saveCurrentFile(){
+ if(!activeProjectId||!getProject())return;
+ getProject().files[activeFilePath]=$("codeEditor").value;
+ getProject().activeFile=activeFilePath;getProject().updated=Date.now();
+}
 function onEditorInput(){saveCurrentFile();saveProjects();syncLineNumbers();renderTabs();updateCursor();$("saveStatus").textContent="Saved locally"}
-function syncLineNumbers(){const lines=$("codeEditor").value.split("\n").length;$("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");$("lineNumbers").scrollTop=$("codeEditor").scrollTop;$("lineCount").textContent=lines+" line"+(lines===1?"":"s")}
-function updateCursor(){const t=$("codeEditor"),before=t.value.slice(0,t.selectionStart),lines=before.split("\n");$("cursorLabel").textContent="Ln "+lines.length+", Col "+(lines[lines.length-1].length+1)}
-$("codeEditor").addEventListener("click",updateCursor);$("codeEditor").addEventListener("keyup",updateCursor);
-function editorKeydown(e){const t=e.target;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveCurrentFile();saveProjects();toast("Project saved");return}if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();runPreview();return}if(e.key==="Tab"){e.preventDefault();t.setRangeText("  ",t.selectionStart,t.selectionEnd,"end");onEditorInput()}}
+function syncLineNumbers(){
+ const lines=$("codeEditor").value.split("\n").length;
+ $("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");
+ $("lineNumbers").scrollTop=$("codeEditor").scrollTop;
+ $("lineCount").textContent=lines+" line"+(lines===1?"":"s");
+}
+function updateCursor(){
+ const t=$("codeEditor"),before=t.value.slice(0,t.selectionStart),lines=before.split("\n");
+ $("cursorLabel").textContent="Ln "+lines.length+", Col "+(lines[lines.length-1].length+1);
+}
+$("codeEditor").addEventListener("click",updateCursor);
+$("codeEditor").addEventListener("keyup",updateCursor);
+function editorKeydown(e){
+ const t=e.target;
+ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveCurrentFile();saveProjects();toast("Project saved");return}
+ if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();runPreview();return}
+ if(e.key==="Tab"){e.preventDefault();t.setRangeText("  ",t.selectionStart,t.selectionEnd,"end");onEditorInput()}
+}
 
-/* FIX: changing views no longer calls runPreview recursively. */
+/* CORRECTED PREVIEW VIEW SWITCHING */
 function showView(view){
  currentView=view;
  $("previewArea").classList.toggle("show",view==="preview");
  $("editorTab").classList.toggle("active",view==="editor");
  $("previewTab").classList.toggle("active",view==="preview");
+
  if(view==="preview"){
   saveCurrentFile();
   saveProjects();
-  $("previewFrame").srcdoc=getPreviewHTML();
+  refreshPreviewFrame();
  }
 }
-function mobileView(which){mobilePanel=which;$("mobileProjects").classList.toggle("active",which==="projects");$("mobileEditor").classList.toggle("active",which==="editor");$("mobileAI").classList.toggle("active",which==="ai");document.querySelector(".left-panel").style.display=which==="projects"?"flex":"none";document.querySelector(".right-panel").style.display=which==="ai"?"flex":"none";document.querySelector(".center").style.display=which==="editor"?"flex":"none"}
 
-/* FIX: never use CSS or JavaScript as HTML when index.html is empty.
-   Empty HTML means an intentionally blank preview. */
+function mobileView(which){
+ mobilePanel=which;
+ $("mobileProjects").classList.toggle("active",which==="projects");
+ $("mobileEditor").classList.toggle("active",which==="editor");
+ $("mobileAI").classList.toggle("active",which==="ai");
+ document.querySelector(".left-panel").style.display=which==="projects"?"flex":"none";
+ document.querySelector(".right-panel").style.display=which==="ai"?"flex":"none";
+ document.querySelector(".center").style.display=which==="editor"?"flex":"none";
+}
+
+/* Build the preview from the project's actual HTML file. */
 function getPreviewHTML(){
  const files=getProject().files;
- let html=files["index.html"]!==undefined?String(files["index.html"]):String(files[activeFilePath]||"");
+ let html="";
+
+ if(files["index.html"]!==undefined && String(files["index.html"]).trim()){
+  html=String(files["index.html"]);
+ }else if(/\.(html?|HTML?)$/i.test(activeFilePath) && files[activeFilePath]!==undefined){
+  html=String(files[activeFilePath]);
+ }else if(files["index.html"]!==undefined){
+  html=String(files["index.html"]);
+ }
+
  if(!html.trim())return "";
- const css=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".css")).map(([,v])=>v).join("\n");
- const js=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".js")||p.toLowerCase().endsWith(".mjs")).map(([,v])=>v).join("\n;\n");
- if(css){if(/<\/head>/i.test(html))html=html.replace(/<\/head>/i,`<style>${css.replace(/<\/style/gi,"<\\/style")}</style></head>`);else html=`<style>${css.replace(/<\/style/gi,"<\\/style")}</style>`+html}
- if(js){const script=`<script>${js.replace(/<\/script/gi,"<\\/script")}<\/script>`;if(/<\/body>/i.test(html))html=html.replace(/<\/body>/i,script+"</body>");else html+=script}
+
+ const css=Object.entries(files)
+  .filter(([path])=>path.toLowerCase().endsWith(".css"))
+  .map(([,content])=>content).join("\n");
+
+ const js=Object.entries(files)
+  .filter(([path])=>path.toLowerCase().endsWith(".js")||path.toLowerCase().endsWith(".mjs"))
+  .map(([,content])=>content).join("\n;\n");
+
+ if(css){
+  const styleTag=`<style>${css.replace(/<\/style/gi,"<\\/style")}</style>`;
+  if(/<\/head>/i.test(html))html=html.replace(/<\/head>/i,styleTag+"</head>");
+  else html=styleTag+html;
+ }
+
+ if(js){
+  const scriptTag=`<script>${js.replace(/<\/script/gi,"<\\/script")}<\/script>`;
+  if(/<\/body>/i.test(html))html=html.replace(/<\/body>/i,scriptTag+"</body>");
+  else html+=scriptTag;
+ }
  return html;
 }
 
-/* FIX: Run and Refresh always rebuild the preview from the current saved code. */
+/* This function performs the actual iframe refresh. */
+function refreshPreviewFrame(){
+ const frame=$("previewFrame");
+ if(!frame)return;
+
+ const previewHTML=getPreviewHTML();
+
+ // Setting srcdoc directly is reliable in the preview iframe.
+ frame.srcdoc=previewHTML;
+}
+
+/* Run and Refresh both use the same refresh function.
+   They do not call showView(), so there is no recursive refresh. */
 function runPreview(){
  saveCurrentFile();
  saveProjects();
- $("previewFrame").srcdoc=getPreviewHTML();
- if(currentView!=="preview"){
-  currentView="preview";
-  $("previewArea").classList.add("show");
-  $("editorTab").classList.remove("active");
-  $("previewTab").classList.add("active");
- }
+
+ currentView="preview";
+ $("previewArea").classList.add("show");
+ $("editorTab").classList.remove("active");
+ $("previewTab").classList.add("active");
+
+ refreshPreviewFrame();
  toast("Preview refreshed");
 }
-function openPreviewTab(){const blob=new Blob([getPreviewHTML()],{type:"text/html"});if(lastPreviewUrl)URL.revokeObjectURL(lastPreviewUrl);lastPreviewUrl=URL.createObjectURL(blob);window.open(lastPreviewUrl,"_blank","noopener")}
-function downloadBlob(content,filename,type="text/plain"){const url=URL.createObjectURL(new Blob([content],{type})),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
-function downloadStandalone(){saveCurrentFile();downloadBlob(getPreviewHTML(),safeName(getProject().name).replace(/\s+/g,"-")+".html","text/html");toast("Standalone HTML exported")}
+
+function openPreviewTab(){
+ saveCurrentFile();
+ const html=getPreviewHTML();
+ const blob=new Blob([html],{type:"text/html"});
+ if(lastPreviewUrl)URL.revokeObjectURL(lastPreviewUrl);
+ lastPreviewUrl=URL.createObjectURL(blob);
+ window.open(lastPreviewUrl,"_blank","noopener");
+}
+function downloadBlob(content,filename,type="text/plain"){
+ const url=URL.createObjectURL(new Blob([content],{type}));
+ const a=document.createElement("a");a.href=url;a.download=filename;
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function downloadStandalone(){
+ saveCurrentFile();
+ downloadBlob(getPreviewHTML(),safeName(getProject().name).replace(/\s+/g,"-")+".html","text/html");
+ toast("Standalone HTML exported");
+}
 function downloadCurrentFile(){downloadBlob(getProject().files[activeFilePath]||"",activeFilePath.split("/").pop());toast("File downloaded")}
-async function exportProject(){saveCurrentFile();saveProjects();if(!window.JSZip){toast("ZIP library unavailable.");return}try{const zip=new JSZip(),folder=zip.folder(safeName(getProject().name).replace(/[\\/:*?"<>|]/g,"-"));Object.entries(getProject().files).forEach(([path,content])=>folder.file(path,content));folder.file("README.txt",getProject().name+"\nCreated with CodeStudio AI.\n");const blob=await zip.generateAsync({type:"blob"});downloadBlob(blob,safeName(getProject().name).replace(/\s+/g,"-")+".zip","application/zip");toast("Project ZIP exported")}catch(e){toast("Could not create ZIP: "+e.message)}}
-function formatCode(){const t=$("codeEditor"),ext=getExtension(activeFilePath);if(!["html","htm","css","js","mjs","json"].includes(ext)){toast("Basic formatting is supported for HTML, CSS, JS and JSON.");return}try{if(ext==="json")t.value=JSON.stringify(JSON.parse(t.value),null,2);else{let indent=0,formatted=[];t.value.split("\n").forEach(line=>{let s=line.trim();if(!s)return;if(/^<\/[^>]+/.test(s)||/^[}\]]/.test(s))indent=Math.max(0,indent-1);formatted.push("  ".repeat(indent)+s);const opens=(s.match(/{/g)||[]).length,closes=(s.match(/}/g)||[]).length;if(!/^\/\//.test(s))indent=Math.max(0,indent+opens-closes)});t.value=formatted.join("\n")}onEditorInput();toast("Basic formatting applied")}catch(e){toast("Could not format: "+e.message)}}
+async function exportProject(){
+ saveCurrentFile();saveProjects();
+ if(!window.JSZip){toast("ZIP library unavailable.");return}
+ try{
+  const zip=new JSZip(),folder=zip.folder(safeName(getProject().name).replace(/[\\/:*?"<>|]/g,"-"));
+  Object.entries(getProject().files).forEach(([path,content])=>folder.file(path,content));
+  folder.file("README.txt",getProject().name+"\nCreated with CodeStudio AI.\n");
+  const blob=await zip.generateAsync({type:"blob"});
+  downloadBlob(blob,safeName(getProject().name).replace(/\s+/g,"-")+".zip","application/zip");
+  toast("Project ZIP exported");
+ }catch(e){toast("Could not create ZIP: "+e.message)}
+}
+function formatCode(){
+ const t=$("codeEditor"),ext=getExtension(activeFilePath);
+ if(!["html","htm","css","js","mjs","json"].includes(ext)){toast("Basic formatting is supported for HTML, CSS, JS and JSON.");return}
+ try{
+  if(ext==="json")t.value=JSON.stringify(JSON.parse(t.value),null,2);
+  else{
+   let indent=0,formatted=[];
+   t.value.split("\n").forEach(line=>{
+    let s=line.trim();if(!s)return;
+    if(/^<\/[^>]+/.test(s)||/^[}\]]/.test(s))indent=Math.max(0,indent-1);
+    formatted.push("  ".repeat(indent)+s);
+    const opens=(s.match(/{/g)||[]).length,closes=(s.match(/}/g)||[]).length;
+    if(!/^\/\//.test(s))indent=Math.max(0,indent+opens-closes);
+   });
+   t.value=formatted.join("\n");
+  }
+  onEditorInput();toast("Basic formatting applied");
+ }catch(e){toast("Could not format: "+e.message)}
+}
 function openNewProject(){$("newProjectName").value="";$("projectTemplate").value="blank";openModal("projectModal");$("newProjectName").focus()}
-function createProject(){const name=safeName($("newProjectName").value);if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast("A project with that name already exists.");return}const p=makeProject(name,$("projectTemplate").value);projects.unshift(p);activeProjectId=p.id;activeFilePath="index.html";saveProjects();renderAll();loadEditor();closeModal("projectModal");showView("editor");$("previewFrame").srcdoc="";toast("Project created")}
+function createProject(){
+ const name=safeName($("newProjectName").value);
+ if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast("A project with that name already exists.");return}
+ const p=makeProject(name,$("projectTemplate").value);
+ projects.unshift(p);activeProjectId=p.id;activeFilePath="index.html";
+ saveProjects();renderAll();loadEditor();closeModal("projectModal");showView("editor");
+ $("previewFrame").srcdoc="";toast("Project created");
+}
 function openNewFile(){$("newFilePath").value="";$("newFileType").value="custom";openModal("fileModal");$("newFilePath").focus()}
-function suggestFilePath(){const type=$("newFileType").value;if(type!=="custom")$("newFilePath").value=({html:"pages/page.html",css:"style.css",js:"script.js",json:"data.json"})[type]}
-function createFile(){const path=$("newFilePath").value.trim().replace(/\\/g,"/");if(!path||path.startsWith("/")||path.split("/").some(x=>!x||x===".."||x===".")){toast("Enter a valid relative file path.");return}if(getProject().files[path]!==undefined){toast("That file already exists.");return}saveCurrentFile();const ext=getExtension(path);getProject().files[path]=ext==="html"?"":ext==="css"?"":ext==="js"?"":ext==="json"?"{\n  \n}\n":"";activeFilePath=path;getProject().activeFile=path;saveProjects();renderAll();loadEditor();closeModal("fileModal");toast("File added")}
+function suggestFilePath(){
+ const type=$("newFileType").value;
+ if(type!=="custom")$("newFilePath").value=({html:"pages/page.html",css:"style.css",js:"script.js",json:"data.json"})[type];
+}
+function createFile(){
+ const path=$("newFilePath").value.trim().replace(/\\/g,"/");
+ if(!path||path.startsWith("/")||path.split("/").some(x=>!x||x===".."||x===".")){toast("Enter a valid relative file path.");return}
+ if(getProject().files[path]!==undefined){toast("That file already exists.");return}
+ saveCurrentFile();const ext=getExtension(path);
+ getProject().files[path]=ext==="json"?"{\n  \n}\n":"";
+ activeFilePath=path;getProject().activeFile=path;saveProjects();renderAll();loadEditor();closeModal("fileModal");toast("File added");
+}
 function deleteFile(path){
  const p=getProject();if(p.files[path]===undefined)return;
  if(!confirm('Delete "'+path+'"? This cannot be undone.'))return;
@@ -372,28 +541,82 @@ function deleteFile(path){
  const remaining=Object.keys(p.files).sort();
  if(!remaining.length)p.files["index.html"]="";
  if(activeFilePath===path)activeFilePath=Object.keys(p.files).sort()[0];
- p.activeFile=activeFilePath;p.updated=Date.now();saveProjects();renderAll();loadEditor();toast("File deleted");
+ p.activeFile=activeFilePath;p.updated=Date.now();
+ saveProjects();renderAll();loadEditor();toast("File deleted");
 }
-function showProjectOptions(id){const p=projects.find(x=>x.id===id);if(!p)return;const action=prompt("Project: "+p.name+"\nType R to rename, D to duplicate, or X to delete.");if(!action)return;if(action.toLowerCase()==="r"){renameTargetId=id;$("renameInput").value=p.name;openModal("renameModal")}else if(action.toLowerCase()==="d"){const copy=JSON.parse(JSON.stringify(p));copy.id=uid();copy.name=p.name+" Copy";copy.created=Date.now();copy.updated=Date.now();projects.unshift(copy);saveProjects();renderAll();toast("Project duplicated")}else if(action.toLowerCase()==="x"){if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;projects=projects.filter(x=>x.id!==id);if(!projects.length)projects.push(makeProject("Code Project","blank"));if(activeProjectId===id){activeProjectId=projects[0].id;activeFilePath=projects[0].activeFile||"index.html";chatHistory=[]}saveProjects();renderAll();loadEditor();toast("Project deleted")}}
-function renameProject(){const p=projects.find(x=>x.id===renameTargetId);if(!p)return;const name=safeName($("renameInput").value);if(projects.some(x=>x.id!==p.id&&x.name.toLowerCase()===name.toLowerCase())){toast("That name is already used.");return}p.name=name;saveProjects();renderAll();closeModal("renameModal");toast("Project renamed")}
+function showProjectOptions(id){
+ const p=projects.find(x=>x.id===id);if(!p)return;
+ const action=prompt("Project: "+p.name+"\nType R to rename, D to duplicate, or X to delete.");
+ if(!action)return;
+ if(action.toLowerCase()==="r"){
+  renameTargetId=id;$("renameInput").value=p.name;openModal("renameModal");
+ }else if(action.toLowerCase()==="d"){
+  const copy=JSON.parse(JSON.stringify(p));copy.id=uid();copy.name=p.name+" Copy";copy.created=Date.now();copy.updated=Date.now();
+  projects.unshift(copy);saveProjects();renderAll();toast("Project duplicated");
+ }else if(action.toLowerCase()==="x"){
+  if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;
+  projects=projects.filter(x=>x.id!==id);
+  if(!projects.length)projects.push(makeProject("Code Project","blank"));
+  if(activeProjectId===id){activeProjectId=projects[0].id;activeFilePath=projects[0].activeFile||"index.html";chatHistory=[]}
+  saveProjects();renderAll();loadEditor();toast("Project deleted");
+ }
+}
+function renameProject(){
+ const p=projects.find(x=>x.id===renameTargetId);if(!p)return;
+ const name=safeName($("renameInput").value);
+ if(projects.some(x=>x.id!==p.id&&x.name.toLowerCase()===name.toLowerCase())){toast("That name is already used.");return}
+ p.name=name;saveProjects();renderAll();closeModal("renameModal");toast("Project renamed");
+}
 function openModal(id){$(id).classList.add("open")}
 function closeModal(id){$(id).classList.remove("open")}
 document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.classList.remove("open")}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".overlay.open").forEach(o=>o.classList.remove("open"))});
-function setMode(mode,el){aiMode=mode;document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("active",b===el));const placeholders={write:"Describe the code you want me to write...",debug:"Describe the bug or ask me to inspect your code...",fix:"Describe the issue you want fixed...",review:"Ask for a UI/UX review or improvements...",explain:"Which part of the code would you like explained?",feature:"Describe the feature you want to add..."};$("aiInput").placeholder=placeholders[mode]||"Ask the AI...";if(mode==="review")$("aiInput").value="Review and improve the UI/UX of my current project. Apply the improvements directly to the existing files.";else if(mode==="debug")$("aiInput").value="Inspect my current project for bugs and fix them directly in the existing files.";else if(mode==="fix")$("aiInput").value="Fix the issue in my project by editing only the necessary parts of the existing code.";$("aiInput").focus()}
+
+function setMode(mode,el){
+ aiMode=mode;document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("active",b===el));
+ const placeholders={write:"Describe the code you want me to write...",debug:"Describe the bug or ask me to inspect your code...",fix:"Describe the issue you want fixed...",review:"Ask for a UI/UX review or improvements...",explain:"Which part of the code would you like explained?",feature:"Describe the feature you want to add..."};
+ $("aiInput").placeholder=placeholders[mode]||"Ask the AI...";
+ if(mode==="review")$("aiInput").value="Review and improve the UI/UX of my current project. Apply the improvements directly to the existing files.";
+ else if(mode==="debug")$("aiInput").value="Inspect my current project for bugs and fix them directly in the existing files.";
+ else if(mode==="fix")$("aiInput").value="Fix the issue in my project by editing only the necessary parts of the existing code.";
+ $("aiInput").focus();
+}
 function quickPrompt(prompt){$("aiInput").value=prompt;$("aiInput").focus()}
 function attachCurrentFile(){$("aiInput").value+=($("aiInput").value?"\n\n":"")+"Please focus on this file: "+activeFilePath;$("aiInput").focus()}
 function aiKeydown(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendToAI()}}
-function addMessage(role,content){const log=$("chatLog"),empty=$("chatEmpty");if(empty)empty.remove();const msg=document.createElement("div");msg.className="chat-message "+role;const label=document.createElement("div");label.className="message-label";label.textContent=role==="user"?"YOU":"CODESTUDIO AI";const body=document.createElement("div");body.className="message-body";if(role==="user")body.textContent=content;else body.innerHTML=formatAIText(content);msg.append(label,body);log.appendChild(msg);log.scrollTop=log.scrollHeight;return msg}
+function addMessage(role,content){
+ const log=$("chatLog"),empty=$("chatEmpty");if(empty)empty.remove();
+ const msg=document.createElement("div");msg.className="chat-message "+role;
+ const label=document.createElement("div");label.className="message-label";label.textContent=role==="user"?"YOU":"CODESTUDIO AI";
+ const body=document.createElement("div");body.className="message-body";
+ if(role==="user")body.textContent=content;else body.innerHTML=formatAIText(content);
+ msg.append(label,body);log.appendChild(msg);log.scrollTop=log.scrollHeight;return msg;
+}
 function addAIMessage(content){return addMessage("assistant",content)}
 function formatAIText(text){
  text=String(text??"");
  if(window.marked&&window.DOMPurify){marked.setOptions({gfm:true,breaks:true});return DOMPurify.sanitize(marked.parse(text))}
- let s=escapeHTML(text);s=s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g,(_,lang,code)=>`<pre><code>${code}</code></pre>`);s=s.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\n/g,"<br>");return s;
+ let s=escapeHTML(text);
+ s=s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g,(_,lang,code)=>`<pre><code>${code}</code></pre>`);
+ s=s.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\n/g,"<br>");
+ return s;
 }
 async function copyText(text){try{await navigator.clipboard.writeText(text);toast("Copied to clipboard")}catch(e){toast("Clipboard permission unavailable")}}
-function clearChat(){chatHistory=[];$("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>What are we building?</h3><p>Choose an action and ask about your current project.</p></div>';toast("Conversation cleared")}
-function getAIContext(){const p=getProject(),files=Object.entries(p.files);const MAX_FILE=14000,MAX_TOTAL=42000;let total=0,out=[];for(const[path,content]of files){if(total>=MAX_TOTAL){out.push("[Additional files omitted due to context limit.]");break}const trimmed=String(content).slice(0,Math.min(MAX_FILE,MAX_TOTAL-total));out.push("FILE: "+path+"\n```"+getExtension(path)+"\n"+trimmed+"\n```");total+=trimmed.length}return"PROJECT: "+p.name+"\nCURRENT FILE: "+activeFilePath+"\n\n"+out.join("\n\n")}
+function clearChat(){
+ chatHistory=[];
+ $("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>What are we building?</h3><p>Choose an action and ask about your current project.</p></div>';
+ toast("Conversation cleared");
+}
+function getAIContext(){
+ const p=getProject(),files=Object.entries(p.files);
+ const MAX_FILE=14000,MAX_TOTAL=42000;let total=0,out=[];
+ for(const[path,content]of files){
+  if(total>=MAX_TOTAL){out.push("[Additional files omitted due to context limit.]");break}
+  const trimmed=String(content).slice(0,Math.min(MAX_FILE,MAX_TOTAL-total));
+  out.push("FILE: "+path+"\n```"+getExtension(path)+"\n"+trimmed+"\n```");total+=trimmed.length;
+ }
+ return"PROJECT: "+p.name+"\nCURRENT FILE: "+activeFilePath+"\n\n"+out.join("\n\n");
+}
 function buildPrompt(userPrompt){
  return `You are CodeStudio AI inside a coding editor. The user expects you to APPLY edits directly, not merely print code.
 Return ONLY valid JSON, with this schema:
@@ -414,15 +637,23 @@ ${getAIContext()}
 USER REQUEST:
 ${userPrompt}`;
 }
-function extractAIText(data){if(typeof data==="string")return data;if(!data||typeof data!=="object")return"";for(const k of ["output","response","text","reply","message","result"])if(typeof data[k]==="string")return data[k];if(Array.isArray(data.output))return data.output.map(x=>typeof x==="string"?x:(x.content||"")).join("\n");if(data.choices?.[0]?.message?.content)return data.choices[0].message.content;if(data.choices?.[0]?.text)return data.choices[0].text;if(data.detail)return typeof data.detail==="string"?data.detail:JSON.stringify(data.detail);return JSON.stringify(data,null,2)}
+function extractAIText(data){
+ if(typeof data==="string")return data;
+ if(!data||typeof data!=="object")return"";
+ for(const k of ["output","response","text","reply","message","result"])if(typeof data[k]==="string")return data[k];
+ if(Array.isArray(data.output))return data.output.map(x=>typeof x==="string"?x:(x.content||"")).join("\n");
+ if(data.choices?.[0]?.message?.content)return data.choices[0].message.content;
+ if(data.choices?.[0]?.text)return data.choices[0].text;
+ if(data.detail)return typeof data.detail==="string"?data.detail:JSON.stringify(data.detail);
+ return JSON.stringify(data,null,2);
+}
 function parseAIResult(text){
  let s=String(text).trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
  try{return JSON.parse(s)}catch{return null}
 }
 function applyAIChanges(result){
  if(!result||!Array.isArray(result.edits))return{ok:false,error:"The AI response did not contain a valid edits array."};
- const p=getProject(),updated={...p.files};saveCurrentFile();
- updated[activeFilePath]=$("codeEditor").value;
+ const p=getProject(),updated={...p.files};saveCurrentFile();updated[activeFilePath]=$("codeEditor").value;
  for(const edit of result.edits){
   if(!edit||typeof edit.path!=="string")return{ok:false,error:"One proposed edit had no valid file path."};
   const path=edit.path.replace(/\\/g,"/");
@@ -450,14 +681,20 @@ async function sendToAI(){
  if(!userPrompt){toast("Type a message for the AI first.");input.focus();return}
  if(!getProject()){toast("Create a project first.");return}
  saveCurrentFile();addMessage("user",userPrompt);input.value="";
- const loading=document.createElement("div");loading.className="ai-loading";loading.innerHTML='<span class="spinner"></span><span>Thinking about your code…</span>';$("chatLog").appendChild(loading);$("chatLog").scrollTop=$("chatLog").scrollHeight;
+ const loading=document.createElement("div");loading.className="ai-loading";loading.innerHTML='<span class="spinner"></span><span>Thinking about your code…</span>';
+ $("chatLog").appendChild(loading);$("chatLog").scrollTop=$("chatLog").scrollHeight;
  isThinking=true;$("sendAiBtn").disabled=true;$("sendAiBtn").textContent="…";
  try{
   const prompt=buildPrompt(userPrompt);
-  const response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:prompt,prompt:prompt,systemPrompt:"You are CodeStudio AI. Return valid JSON containing a Markdown message and targeted file edits. Never return full replacement files when targeted edits are possible.",projectName:getProject().name,currentFile:activeFilePath,mode:aiMode})});
-  const raw=await response.text();let data;try{data=JSON.parse(raw)}catch(e){throw new Error("The server returned an invalid response. Check your Vercel /api/chat backend and logs.")}
+  const response=await fetch("/api/chat",{
+   method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({message:prompt,prompt:prompt,systemPrompt:"You are CodeStudio AI. Return valid JSON containing a Markdown message and targeted file edits. Never return full replacement files when targeted edits are possible.",projectName:getProject().name,currentFile:activeFilePath,mode:aiMode})
+  });
+  const raw=await response.text();let data;
+  try{data=JSON.parse(raw)}catch(e){throw new Error("The server returned an invalid response. Check your Vercel /api/chat backend and logs.")}
   if(!response.ok)throw new Error(extractAIText(data)||("Server error "+response.status));
-  const answer=extractAIText(data);if(!answer||answer==="{}")throw new Error("The AI returned an empty response. Check the backend response format.");
+  const answer=extractAIText(data);
+  if(!answer||answer==="{}")throw new Error("The AI returned an empty response. Check the backend response format.");
   const result=parseAIResult(answer);
   if(result&&Array.isArray(result.edits)){
    if(result.edits.length){
@@ -467,11 +704,23 @@ async function sendToAI(){
     toast("AI changes applied");
    }else addAIMessage(result.message||"Done.");
   }else addAIMessage(answer);
- }catch(err){addAIMessage("I couldn't complete that request.\n\n**Error:** "+(err.message||"Unknown error")+"\n\nCheck that your Vercel deployment includes `/api/chat` and that `REPLICATE_API_TOKEN` is configured in Vercel Environment Variables.")}
- finally{loading.remove();isThinking=false;$("sendAiBtn").disabled=false;$("sendAiBtn").textContent="↑ Send";$("chatLog").scrollTop=$("chatLog").scrollHeight}
+ }catch(err){
+  addAIMessage("I couldn't complete that request.\n\n**Error:** "+(err.message||"Unknown error")+"\n\nCheck that your Vercel deployment includes `/api/chat` and that `REPLICATE_API_TOKEN` is configured in Vercel Environment Variables.");
+ }finally{
+  loading.remove();isThinking=false;$("sendAiBtn").disabled=false;$("sendAiBtn").textContent="↑ Send";$("chatLog").scrollTop=$("chatLog").scrollHeight;
+ }
 }
-function startReview(){const scope=$("reviewScope").value;closeModal("reviewModal");setMode("review",document.querySelector('[data-mode="review"]'));const scopes={full:"Review the entire project",current:"Review only the current file "+activeFilePath,responsive:"Focus on responsive design, mobile layouts, and small-screen usability",accessibility:"Focus on accessibility, keyboard navigation, contrast, semantic HTML, and usability",visual:"Focus on visual polish, layout, spacing, typography, colours, consistency, and interaction states"};$("aiInput").value=scopes[scope]+". Give prioritized findings and apply useful code improvements directly to the existing files using small targeted edits.";sendToAI()}
-function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2600)}
+function startReview(){
+ const scope=$("reviewScope").value;closeModal("reviewModal");
+ setMode("review",document.querySelector('[data-mode="review"]'));
+ const scopes={full:"Review the entire project",current:"Review only the current file "+activeFilePath,responsive:"Focus on responsive design, mobile layouts, and small-screen usability",accessibility:"Focus on accessibility, keyboard navigation, contrast, semantic HTML, and usability",visual:"Focus on visual polish, layout, spacing, typography, colours, consistency, and interaction states"};
+ $("aiInput").value=scopes[scope]+". Give prioritized findings and apply useful code improvements directly to the existing files using small targeted edits.";
+ sendToAI();
+}
+function toast(message){
+ const el=$("toast");el.textContent=message;el.classList.add("show");
+ clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2600);
+}
 window.addEventListener("beforeunload",()=>{try{saveCurrentFile();saveProjects(false)}catch(e){}});
 loadProjects();
 </script>
