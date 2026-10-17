@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,12 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CodeStudio AI</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
 <style>
-:root {
-  --bg:#0b0d13;--panel:#11141d;--panel2:#171b26;--line:#292e3d;
-  --text:#eef1fa;--muted:#8c95aa;--accent:#8b7cff;--blue:#60a5fa;
-  --green:#43d9a3;--red:#ff6d87;--radius:13px;
-}
+:root{--bg:#0b0d13;--panel:#11141d;--panel2:#171b26;--line:#292e3d;--text:#eef1fa;--muted:#8c95aa;--accent:#8b7cff;--blue:#60a5fa;--green:#43d9a3;--red:#ff6d87;--radius:13px}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:13px Inter,system-ui,-apple-system,sans-serif;height:100vh;overflow:hidden}
 button,input,textarea,select{font:inherit}
@@ -23,9 +22,7 @@ button.primary{background:linear-gradient(135deg,#8172ff,#6356d9);border-color:t
 button.primary:hover{filter:brightness(1.12)}
 button.ghost{background:transparent}
 button.danger:hover{border-color:var(--red);color:var(--red)}
-.icon{font-size:16px}
-.small{font-size:11px;color:var(--muted)}
-.muted{color:var(--muted)}
+.icon{font-size:16px}.small{font-size:11px;color:var(--muted)}.muted{color:var(--muted)}
 .topbar{height:56px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:12px;background:#10131bed;position:relative;z-index:2}
 .brand{display:flex;align-items:center;gap:9px;font-weight:750;font-size:15px;white-space:nowrap}
 .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#a99bff,#6355d9);display:grid;place-items:center;font-size:17px}
@@ -49,11 +46,13 @@ button.danger:hover{border-color:var(--red);color:var(--red)}
 .project-item .project-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .project-item .mini-action{opacity:0;padding:2px 5px;background:transparent;border:0}
 .project-item:hover .mini-action{opacity:1}
-.tree-row{display:flex;align-items:center;gap:7px;padding:7px 6px;border-radius:7px;cursor:pointer;color:#b9c1d4}
+.tree-row{display:flex;align-items:center;gap:7px;padding:7px 6px;border-radius:7px;cursor:pointer;color:#b9c1d4;min-width:0}
 .tree-row:hover,.tree-row.active{background:#252139;color:white}
-.tree-row .path{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tree-row .file-actions{margin-left:auto;opacity:0}
+.tree-row .path{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tree-row .file-actions{margin-left:auto;opacity:0;display:flex}
 .tree-row:hover .file-actions{opacity:1}
+.file-delete{border:0;background:transparent;padding:2px 6px;color:#8c95aa;font-size:15px;line-height:1;border-radius:5px}
+.file-delete:hover{color:var(--red);background:#ff6d8715}
 .tree-folder{padding-left:12px}
 .storage-note{padding:10px;border:1px solid var(--line);border-radius:9px;background:#151924;color:var(--muted);font-size:11px;line-height:1.6;margin-top:18px}
 .center{display:flex;flex-direction:column;min-width:0;background:#0d1017;overflow:hidden}
@@ -66,7 +65,6 @@ button.danger:hover{border-color:var(--red);color:var(--red)}
 .tabs{height:38px;display:flex;overflow:auto;flex-shrink:0;border-bottom:1px solid var(--line);background:#10131b}
 .tab{display:flex;align-items:center;gap:7px;padding:0 13px;border-right:1px solid var(--line);color:var(--muted);cursor:pointer;white-space:nowrap}
 .tab.active{background:#191d29;color:#fff;border-bottom:2px solid var(--accent)}
-.tab .unsaved{color:#c2a5ff}
 .editor-wrap{display:flex;flex:1;min-height:0;overflow:hidden;position:relative}
 .line-numbers{width:44px;flex-shrink:0;text-align:right;padding:14px 10px 14px 0;color:#555e73;background:#0e1118;font:12px/21px ui-monospace,monospace;overflow:hidden;white-space:pre}
 #codeEditor{width:100%;height:100%;resize:none;border:0;border-radius:0;background:#0e1118;color:#dbe3f7;padding:14px 14px 40px 8px;font:12px/21px "SFMono-Regular",Consolas,monospace;tab-size:2;white-space:pre;overflow:auto;caret-color:#b5a9ff}
@@ -78,8 +76,7 @@ button.danger:hover{border-color:var(--red);color:var(--red)}
 .preview-frame-wrap{flex:1;min-height:0;padding:12px;background:#171a24}
 .preview-frame{width:100%;height:100%;border:1px solid #33384b;border-radius:9px;background:white}
 .preview-bottom{height:30px;display:flex;align-items:center;gap:10px;padding:0 12px;color:var(--muted);font-size:10px}
-.center:has(.preview-area.show) .editor-area{display:none}
-.center:has(.preview-area.show) .tabs{display:none}
+.center:has(.preview-area.show) .editor-area,.center:has(.preview-area.show) .tabs{display:none}
 .ai-intro{padding:13px;border:1px solid #393252;background:linear-gradient(140deg,#242039,#151923);border-radius:11px;margin-bottom:13px}
 .ai-avatar{width:31px;height:31px;border-radius:10px;background:linear-gradient(135deg,#b1a4ff,#6657db);display:grid;place-items:center;font-size:17px;flex-shrink:0}
 .ai-title{display:flex;align-items:center;gap:9px}
@@ -91,12 +88,19 @@ button.danger:hover{border-color:var(--red);color:var(--red)}
 .mode-btn b{display:block;font-size:11px;margin-bottom:4px}
 .mode-btn span{font-size:10px;color:var(--muted)}
 .chat-log{display:flex;flex-direction:column;gap:12px;padding:4px 1px}
-.chat-message{border:1px solid var(--line);background:#151924;padding:11px;border-radius:10px;font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.chat-message{border:1px solid var(--line);background:#151924;padding:11px;border-radius:10px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
 .chat-message.user{background:#25203c;border-color:#393052}
 .chat-message .message-label{font-size:10px;color:#a99aff;font-weight:750;margin-bottom:6px}
-.chat-message pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b0e15;border:1px solid var(--line);border-radius:7px;padding:9px;font-size:11px;max-height:260px;overflow:auto}
+.message-body>*:first-child{margin-top:0}
+.message-body>*:last-child{margin-bottom:0}
+.chat-message pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b0e15;border:1px solid var(--line);border-radius:7px;padding:9px;font-size:11px;max-height:300px;overflow:auto}
 .chat-message code{color:#c8bfff}
-.chat-message ul{padding-left:17px}
+.chat-message pre code{color:#e1e5f2}
+.chat-message ul,.chat-message ol{padding-left:20px}
+.chat-message a{color:#a99aff}
+.chat-message table{border-collapse:collapse;display:block;max-width:100%;overflow:auto}
+.chat-message th,.chat-message td{border:1px solid var(--line);padding:5px 7px}
+.chat-message blockquote{margin:8px 0;padding:5px 10px;border-left:3px solid var(--accent);color:#b7bfd2}
 .ai-composer{padding:11px;border-top:1px solid var(--line);flex-shrink:0;background:#11141d}
 .prompt-box{border:1px solid #363044;border-radius:11px;background:#0e1119;padding:8px}
 #aiInput{width:100%;min-height:80px;max-height:160px;resize:vertical;border:0;background:transparent;padding:4px;font-size:12px;line-height:1.5}
@@ -149,7 +153,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <body>
 <header class="topbar">
   <div class="brand"><div class="logo">⌘</div><span>CodeStudio</span></div>
-  <div class="top-project"><span class="muted">/</span><strong id="topProjectName">Welcome Project</strong><span class="badge">HTML</span></div>
+  <div class="top-project"><span class="muted">/</span><strong id="topProjectName">Code Project</strong><span class="badge">HTML</span></div>
   <div class="top-actions">
     <div class="status"><span class="dot"></span><span id="saveStatus">Saved locally</span></div>
     <button class="ghost" title="New project" onclick="openNewProject()">＋ <span class="hide-small">New</span></button>
@@ -157,69 +161,37 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
     <button class="primary" onclick="runPreview()">▶ Run</button>
   </div>
 </header>
-
 <div class="workspace">
-  <!-- LEFT: PROJECTS AND FILES -->
   <aside class="panel left-panel">
     <div class="panel-head"><span>⌘ Workspace</span><button title="Create project" onclick="openNewProject()">＋</button></div>
     <div class="panel-body">
       <div class="section-label">Your projects</div>
       <div id="projectList" class="project-list"></div>
       <button class="full" style="margin-top:9px" onclick="openNewProject()">＋ Create new project</button>
-
       <div class="section-label">Project files</div>
       <div id="fileTree"></div>
       <button class="full" style="margin-top:8px" onclick="openNewFile()">＋ Add file / folder</button>
-
-      <div class="storage-note">
-        <div style="color:#dce1f2;font-weight:650;margin-bottom:5px">▣ Local workspace</div>
-        Projects are saved in this browser on this device. Export a ZIP to back up or move your work.
-      </div>
+      <div class="storage-note"><div style="color:#dce1f2;font-weight:650;margin-bottom:5px">▣ Local workspace</div>Projects are saved in this browser on this device. Export a ZIP to back up or move your work.</div>
     </div>
   </aside>
-
-  <!-- CENTER: EDITOR AND PREVIEW -->
   <main class="center">
     <div class="center-toolbar">
-      <div class="segment">
-        <button id="editorTab" class="active" onclick="showView('editor')">⌨ Editor</button>
-        <button id="previewTab" onclick="showView('preview')">◉ Preview</button>
-      </div>
+      <div class="segment"><button id="editorTab" class="active" onclick="showView('editor')">⌨ Editor</button><button id="previewTab" onclick="showView('preview')">◉ Preview</button></div>
       <div class="toolbar-spacer"></div>
       <button title="Format basic indentation" onclick="formatCode()">⇥ Format</button>
       <button title="Download current file" onclick="downloadCurrentFile()">↓ File</button>
       <button title="Export complete project as ZIP" onclick="exportProject()">▣ ZIP</button>
     </div>
     <div class="tabs" id="fileTabs"></div>
-    <div class="editor-area">
-      <div class="editor-wrap">
-        <div id="lineNumbers" class="line-numbers">1</div>
-        <textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code editor" placeholder="Write your code here..." oninput="onEditorInput()" onscroll="syncLineNumbers()" onkeydown="editorKeydown(event)"></textarea>
-      </div>
-      <div class="editor-footer">
-        <span id="languageLabel">HTML</span><span id="cursorLabel">Ln 1, Col 1</span><span id="lineCount">1 line</span><span style="margin-left:auto">UTF-8</span>
-      </div>
+    <div class="editor-area"><div class="editor-wrap"><div id="lineNumbers" class="line-numbers">1</div><textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code editor" placeholder="Write your code here..." oninput="onEditorInput()" onscroll="syncLineNumbers()" onkeydown="editorKeydown(event)"></textarea></div>
+      <div class="editor-footer"><span id="languageLabel">HTML</span><span id="cursorLabel">Ln 1, Col 1</span><span id="lineCount">1 line</span><span style="margin-left:auto">UTF-8</span></div>
     </div>
-    <div class="preview-area" id="previewArea">
-      <div style="height:40px;display:flex;align-items:center;padding:0 12px;gap:8px;background:#10131b;border-bottom:1px solid var(--line)">
-        <span class="dot"></span><span class="small">Live preview</span>
-        <div style="flex:1"></div>
-        <button onclick="runPreview()">↻ Refresh</button>
-        <button onclick="openPreviewTab()">↗ Open separately</button>
-      </div>
-      <div class="preview-frame-wrap"><iframe id="previewFrame" class="preview-frame" title="App preview" sandbox="allow-scripts allow-forms allow-modals allow-downloads"></iframe></div>
-      <div class="preview-bottom"><span>Sandboxed browser preview</span><span style="margin-left:auto">Your project stays in this workspace</span></div>
-    </div>
+    <div class="preview-area" id="previewArea"><div style="height:40px;display:flex;align-items:center;padding:0 12px;gap:8px;background:#10131b;border-bottom:1px solid var(--line)"><span class="dot"></span><span class="small">Live preview</span><div style="flex:1"></div><button onclick="runPreview()">↻ Refresh</button><button onclick="openPreviewTab()">↗ Open separately</button></div><div class="preview-frame-wrap"><iframe id="previewFrame" class="preview-frame" title="App preview" sandbox="allow-scripts allow-forms allow-modals allow-downloads"></iframe></div><div class="preview-bottom"><span>Sandboxed browser preview</span><span style="margin-left:auto">Your project stays in this workspace</span></div></div>
   </main>
-
-  <!-- RIGHT: AI ASSISTANT -->
   <aside class="panel right-panel">
     <div class="panel-head"><span>✦ AI Assistant</span><button class="ghost" onclick="clearChat()" title="Clear conversation">↺</button></div>
     <div class="panel-body" id="aiPanelBody">
-      <div class="ai-intro">
-        <div class="ai-title"><div class="ai-avatar">✦</div><div><strong>CodeStudio AI</strong><div class="small" style="margin-top:3px">Your coding partner</div></div></div>
-        <p>Describe what you want to build, ask me to find bugs, or request a professional UI/UX review of your project.</p>
-      </div>
+      <div class="ai-intro"><div class="ai-title"><div class="ai-avatar">✦</div><div><strong>CodeStudio AI</strong><div class="small" style="margin-top:3px">Your coding partner</div></div></div><p>Describe what you want to build, ask me to find bugs, or request a professional UI/UX review of your project. I can apply targeted edits directly to your files.</p></div>
       <div class="section-label">Choose an action</div>
       <div class="ai-modes">
         <button class="mode-btn active" data-mode="write" onclick="setMode('write',this)"><b>✧ Write code</b><span>Build a feature</span></button>
@@ -230,614 +202,217 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
         <button class="mode-btn" data-mode="feature" onclick="setMode('feature',this)"><b>＋ Add feature</b><span>Extend the app</span></button>
       </div>
       <div class="section-label">Conversation</div>
-      <div id="chatLog" class="chat-log">
-        <div class="empty-state" id="chatEmpty">
-          <div class="empty-icon">✧</div>
-          <h3>What are we building?</h3>
-          <p>Select an action above and describe what you need. The AI will use your current project's files as context.</p>
-        </div>
-      </div>
+      <div id="chatLog" class="chat-log"><div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>What are we building?</h3><p>Select an action above and describe what you need. The AI will use your current project's files as context.</p></div></div>
     </div>
-    <div class="ai-composer">
-      <div class="prompt-box">
-        <textarea id="aiInput" placeholder="Ask AI to write, debug, or review your code..." onkeydown="aiKeydown(event)"></textarea>
-        <div class="composer-bottom">
-          <span class="small" id="aiContextLabel">Context: current project</span>
-          <div class="ai-send"><button onclick="attachCurrentFile()" title="Insert current file context">＋</button><button class="primary" id="sendAiBtn" onclick="sendToAI()">↑ Send</button></div>
-        </div>
-      </div>
-      <div class="quick-actions">
-        <button onclick="quickPrompt('Find bugs in my current project and explain how to fix them.')">⌕ Find bugs</button>
-        <button onclick="quickPrompt('Review the UI/UX of my project and suggest practical improvements.')">◈ Review UI</button>
-        <button onclick="quickPrompt('Explain the current file in simple language.')">ⓘ Explain</button>
-      </div>
-    </div>
+    <div class="ai-composer"><div class="prompt-box"><textarea id="aiInput" placeholder="Ask AI to write, debug, or review your code..." onkeydown="aiKeydown(event)"></textarea><div class="composer-bottom"><span class="small" id="aiContextLabel">Context: current project</span><div class="ai-send"><button onclick="attachCurrentFile()" title="Insert current file context">＋</button><button class="primary" id="sendAiBtn" onclick="sendToAI()">↑ Send</button></div></div></div><div class="quick-actions"><button onclick="quickPrompt('Find bugs in my current project and fix them directly in the editor.')">⌕ Find bugs</button><button onclick="quickPrompt('Improve the UI/UX of my project by applying targeted edits directly to the existing files.')">◈ Review UI</button><button onclick="quickPrompt('Explain the current file in simple language.')">ⓘ Explain</button></div></div>
   </aside>
 </div>
-
-<nav class="mobile-tabs">
-  <button id="mobileProjects" onclick="mobileView('projects')">▤ Projects</button>
-  <button id="mobileEditor" class="active" onclick="mobileView('editor')">⌨ Editor</button>
-  <button id="mobileAI" onclick="mobileView('ai')">✦ AI</button>
-</nav>
-
-<!-- PROJECT MODAL -->
-<div class="overlay" id="projectModal">
-  <div class="modal">
-    <h2>Create a project</h2>
-    <p>Start with a blank workspace or a useful starter template.</p>
-    <label for="newProjectName">Project name</label>
-    <input id="newProjectName" maxlength="70" placeholder="My awesome app">
-    <label for="projectTemplate">Starter template</label>
-    <select id="projectTemplate">
-      <option value="blank">Blank HTML project</option>
-      <option value="landing">Landing page</option>
-      <option value="game">Mini game</option>
-      <option value="calculator">Calculator</option>
-      <option value="portfolio">Portfolio website</option>
-    </select>
-    <div class="modal-actions"><button onclick="closeModal('projectModal')">Cancel</button><button class="primary" onclick="createProject()">Create project</button></div>
-  </div>
-</div>
-
-<!-- FILE MODAL -->
-<div class="overlay" id="fileModal">
-  <div class="modal">
-    <h2>Add a file or folder</h2>
-    <p>Use paths such as <code>src/app.js</code> to organize files in folders.</p>
-    <label for="newFilePath">File path</label>
-    <input id="newFilePath" placeholder="src/app.js">
-    <label for="newFileType">Quick create</label>
-    <select id="newFileType" onchange="suggestFilePath()">
-      <option value="custom">Custom path</option>
-      <option value="html">HTML file</option>
-      <option value="css">CSS file</option>
-      <option value="js">JavaScript file</option>
-      <option value="json">JSON file</option>
-    </select>
-    <div class="modal-actions"><button onclick="closeModal('fileModal')">Cancel</button><button class="primary" onclick="createFile()">Add file</button></div>
-  </div>
-</div>
-
-<div class="overlay" id="renameModal">
-  <div class="modal">
-    <h2>Rename project</h2>
-    <label for="renameInput">Project name</label>
-    <input id="renameInput" maxlength="70">
-    <div class="modal-actions"><button onclick="closeModal('renameModal')">Cancel</button><button class="primary" onclick="renameProject()">Save name</button></div>
-  </div>
-</div>
-
-<div class="overlay" id="reviewModal">
-  <div class="modal">
-    <h2>UI/UX review</h2>
-    <p>Choose the kind of review you want the AI to perform.</p>
-    <label for="reviewScope">Review scope</label>
-    <select id="reviewScope">
-      <option value="full">Whole project</option>
-      <option value="current">Current file only</option>
-      <option value="responsive">Responsive design and mobile</option>
-      <option value="accessibility">Accessibility and usability</option>
-      <option value="visual">Visual polish and design consistency</option>
-    </select>
-    <div class="modal-actions"><button onclick="closeModal('reviewModal')">Cancel</button><button class="primary" onclick="startReview()">Review with AI</button></div>
-  </div>
-</div>
-
+<nav class="mobile-tabs"><button id="mobileProjects" onclick="mobileView('projects')">▤ Projects</button><button id="mobileEditor" class="active" onclick="mobileView('editor')">⌨ Editor</button><button id="mobileAI" onclick="mobileView('ai')">✦ AI</button></nav>
+<div class="overlay" id="projectModal"><div class="modal"><h2>Create a project</h2><p>Start with a blank workspace or a useful starter template.</p><label for="newProjectName">Project name</label><input id="newProjectName" maxlength="70" placeholder="My awesome app"><label for="projectTemplate">Starter template</label><select id="projectTemplate"><option value="blank">Blank HTML project</option><option value="landing">Landing page</option><option value="game">Mini game</option><option value="calculator">Calculator</option><option value="portfolio">Portfolio website</option></select><div class="modal-actions"><button onclick="closeModal('projectModal')">Cancel</button><button class="primary" onclick="createProject()">Create project</button></div></div></div>
+<div class="overlay" id="fileModal"><div class="modal"><h2>Add a file or folder</h2><p>Use paths such as <code>src/app.js</code> to organize files in folders.</p><label for="newFilePath">File path</label><input id="newFilePath" placeholder="src/app.js"><label for="newFileType">Quick create</label><select id="newFileType" onchange="suggestFilePath()"><option value="custom">Custom path</option><option value="html">HTML file</option><option value="css">CSS file</option><option value="js">JavaScript file</option><option value="json">JSON file</option></select><div class="modal-actions"><button onclick="closeModal('fileModal')">Cancel</button><button class="primary" onclick="createFile()">Add file</button></div></div></div>
+<div class="overlay" id="renameModal"><div class="modal"><h2>Rename project</h2><label for="renameInput">Project name</label><input id="renameInput" maxlength="70"><div class="modal-actions"><button onclick="closeModal('renameModal')">Cancel</button><button class="primary" onclick="renameProject()">Save name</button></div></div></div>
+<div class="overlay" id="reviewModal"><div class="modal"><h2>UI/UX review</h2><p>Choose the kind of review you want the AI to perform.</p><label for="reviewScope">Review scope</label><select id="reviewScope"><option value="full">Whole project</option><option value="current">Current file only</option><option value="responsive">Responsive design and mobile</option><option value="accessibility">Accessibility and usability</option><option value="visual">Visual polish and design consistency</option></select><div class="modal-actions"><button onclick="closeModal('reviewModal')">Cancel</button><button class="primary" onclick="startReview()">Review with AI</button></div></div></div>
 <div class="toast" id="toast"></div>
-
 <script>
 "use strict";
-
-const STORAGE_KEY = "codestudio_ai_projects_v1";
-const ACTIVE_KEY = "codestudio_ai_active_v1";
-
-let projects = [];
-let activeProjectId = null;
-let activeFilePath = "index.html";
-let aiMode = "write";
-let currentView = "editor";
-let mobilePanel = "editor";
-let renameTargetId = null;
-let isThinking = false;
-let toastTimer = null;
-let chatHistory = [];
-let lastPreviewUrl = null;
-
-const $ = id => document.getElementById(id);
-
-const starterHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My First App</title>
-</head>
-<body>
-  <main class="card">
-    <div class="icon">✦</div>
-    <h1>Hello, world!</h1>
-    <p>Your next great idea starts here.</p>
-    <button id="helloButton">Click me</button>
-    <p id="message"></p>
-  </main>
-</body>
-</html>`;
-
-const starterCSS = `* { box-sizing: border-box; }
-body {
-  margin: 0; min-height: 100vh;
-  display: grid; place-items: center;
-  font-family: system-ui, sans-serif;
-  color: #f8fafc;
-  background: linear-gradient(135deg, #111827, #312e81);
+const STORAGE_KEY="codestudio_ai_projects_v1",ACTIVE_KEY="codestudio_ai_active_v1";
+let projects=[],activeProjectId=null,activeFilePath="index.html",aiMode="write",currentView="editor",mobilePanel="editor",renameTargetId=null,isThinking=false,toastTimer=null,chatHistory=[],lastPreviewUrl=null;
+const $=id=>document.getElementById(id);
+const starterHTML="",starterCSS="",starterJS="";
+function uid(){return "p_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function makeProject(name,template){
+ let files={};
+ if(template==="landing"){files["index.html"]='<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Landing Page</title></head>\n<body><main><h1>Build something great.</h1><p>Start editing this page.</p></main></body></html>';files["style.css"]="body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111827;color:white;font:18px system-ui}main{text-align:center;padding:30px}";}
+ else if(template==="game"){files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mini Game</title></head><body><h1>Mini Game</h1><button id="play">Play</button><p id="score"></p></body></html>';files["script.js"]='document.getElementById("play").onclick=()=>document.getElementById("score").textContent="It works!";';}
+ else if(template==="calculator"){files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Calculator</title></head><body><input id="a" type="number"><input id="b" type="number"><button id="sum">Add</button><p id="result"></p></body></html>';files["script.js"]='document.getElementById("sum").onclick=()=>document.getElementById("result").textContent=Number(document.getElementById("a").value)+Number(document.getElementById("b").value);';}
+ else if(template==="portfolio"){files["index.html"]='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio</title></head><body><h1>Your Name</h1><p>My portfolio.</p></body></html>'}
+ else files["index.html"]="";
+ return{id:uid(),name,files,activeFile:"index.html",created:Date.now(),updated:Date.now()};
 }
-.card {
-  text-align: center; padding: 42px;
-  border: 1px solid #ffffff30;
-  border-radius: 24px; background: #ffffff12;
-  box-shadow: 0 25px 80px #0003;
+function loadProjects(){
+ try{const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");if(Array.isArray(data)&&data.length)projects=data.filter(p=>p&&p.id&&p.files&&typeof p.files==="object")}catch(e){console.warn(e)}
+ if(!projects.length){projects=[makeProject("Code Project","blank")];saveProjects(false)}
+ // Migrate only the old untouched demo project, preserving any user-edited files.
+ projects.forEach(p=>{if(p.name==="Welcome Project"&&p.files["index.html"]&&/Hello, world!/.test(p.files["index.html"])&&Object.keys(p.files).length===3&&p.files["style.css"]&&p.files["script.js"]){p.name="Code Project";p.files={"index.html":""};p.activeFile="index.html"}});
+ const wanted=localStorage.getItem(ACTIVE_KEY);activeProjectId=projects.some(p=>p.id===wanted)?wanted:projects[0].id;
+ const p=getProject();activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");
+ renderAll();loadEditor();saveProjects(false);
 }
-.icon { font-size: 36px; color: #c4b5fd; }
-h1 { margin-bottom: 8px; }
-p { color: #cbd5e1; }
-button {
-  margin-top: 12px; border: 0; border-radius: 10px;
-  padding: 12px 20px; cursor: pointer;
-  color: white; background: #7c3aed;
-}
-button:hover { background: #8b5cf6; }`;
-
-const starterJS = `document.getElementById("helloButton")?.addEventListener("click", () => {
-  document.getElementById("message").textContent =
-    "Your app is working! Keep building.";
-});`;
-
-function uid() {
-  return "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-}
-function makeProject(name, template) {
-  let files = {};
-  if (template === "blank") {
-    files["index.html"] = starterHTML;
-    files["style.css"] = starterCSS;
-    files["script.js"] = starterJS;
-  } else if (template === "landing") {
-    files["index.html"] = `<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Landing Page</title></head>
-<body><header><a class="logo" href="#">NOVA</a><nav><a href="#features">Features</a><a href="#about">About</a></nav></header>
-<main><section class="hero"><span class="pill">A better way to create</span><h1>Bring your next big idea to life.</h1><p>A beautiful starting point for your next website.</p><a class="cta" href="#features">Explore features ↗</a></section>
-<section id="features" class="features"><article><h2>01 / Simple</h2><p>Clean experiences that feel effortless.</p></article><article><h2>02 / Modern</h2><p>Thoughtful design with beautiful details.</p></article><article><h2>03 / Flexible</h2><p>Make this project entirely your own.</p></article></section><section id="about" class="about"><h2>Made for your next idea.</h2><p>Replace this text with your story.</p></section></main><footer>© 2026 Nova Studio</footer></body></html>`;
-    files["style.css"] = `*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#0d1020;color:#f8fafc;font-family:Inter,system-ui,sans-serif}header{display:flex;align-items:center;justify-content:space-between;padding:25px 8%;border-bottom:1px solid #ffffff15}a{color:inherit;text-decoration:none}.logo{font-weight:900;letter-spacing:3px}nav{display:flex;gap:24px;color:#cbd5e1;font-size:13px}.hero{padding:100px 8% 85px;max-width:1000px}.pill{border:1px solid #8b7cff66;background:#8b7cff18;color:#c4b5fd;padding:8px 13px;border-radius:99px;font-size:12px}.hero h1{font-size:clamp(42px,7vw,82px);letter-spacing:-4px;line-height:1.03;max-width:800px;margin:28px 0}.hero p,.features p,.about p{color:#a6aec3;line-height:1.8}.cta{display:inline-block;margin-top:18px;background:#8b7cff;padding:14px 19px;border-radius:10px}.features{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:25px 8% 80px}.features article,.about{padding:26px;border:1px solid #ffffff17;border-radius:16px;background:#ffffff08}.features h2{font-size:15px}.about{margin:0 8% 70px}footer{padding:25px 8%;border-top:1px solid #ffffff15;color:#7e879e;font-size:12px}@media(max-width:650px){header{padding:20px 5%}nav{gap:12px}.hero{padding:70px 6%}.hero h1{letter-spacing:-2px}.features{grid-template-columns:1fr;padding:10px 6% 50px}.about{margin:0 6% 50px}}`;
-    files["script.js"] = `// Add your interactions here.`;
-  } else if (template === "game") {
-    files["index.html"] = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quick Tap</title></head><body><main class="game"><p class="eyebrow">REACTION CHALLENGE</p><h1>Quick Tap</h1><p>Tap the button as many times as you can in 10 seconds.</p><div class="score" id="score">0</div><p id="timer">Ready?</p><button id="start">Start game</button></main></body></html>`;
-    files["style.css"] = `*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at top,#312e81,#0b1020 70%);font-family:system-ui,sans-serif;color:white}.game{text-align:center;width:min(440px,92vw);padding:38px;border:1px solid #ffffff25;background:#ffffff0b;border-radius:26px;box-shadow:0 30px 80px #0004}.eyebrow{letter-spacing:2px;font-size:10px;color:#a5b4fc}.score{font-size:76px;font-weight:800;margin:22px}.game button{background:#7c3aed;border:0;padding:14px 25px;color:white;border-radius:12px;cursor:pointer}.game button:hover{background:#8b5cf6}`;
-    files["script.js"] = `let score=0, time=10, timer=null, playing=false;const start=document.getElementById("start");start.addEventListener("click",()=>{if(playing)return;score=0;time=10;playing=true;start.textContent="Tap!";document.getElementById("score").textContent=score;document.getElementById("timer").textContent=time+" seconds";timer=setInterval(()=>{time--;document.getElementById("timer").textContent=time+" seconds";if(time<=0){clearInterval(timer);playing=false;start.textContent="Play again";document.getElementById("timer").textContent="Time's up! Score: "+score;}},1000);});start.addEventListener("click",()=>{if(playing&&start.textContent==="Tap!"){score++;document.getElementById("score").textContent=score;}});`;
-  } else if (template === "calculator") {
-    files["index.html"] = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Calculator</title></head><body><main class="calc"><div id="display" class="display">0</div><div id="keys" class="keys"></div></main></body></html>`;
-    files["style.css"] = `*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#10121b;color:#fff;font-family:system-ui,sans-serif}.calc{width:min(340px,94vw);padding:18px;background:#1b1f2b;border:1px solid #ffffff15;border-radius:22px;box-shadow:0 30px 70px #0006}.display{height:95px;display:flex;align-items:center;justify-content:flex-end;padding:12px;font-size:36px;overflow:hidden;word-break:break-all}.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.keys button{height:57px;border:0;border-radius:13px;background:#292e3d;color:#fff;font-size:17px;cursor:pointer}.keys button:hover{background:#3b4260}.keys .op{background:#4c428b}.keys .eq{background:#8172ff}`;
-    files["script.js"] = `const keys=document.getElementById("keys"),display=document.getElementById("display");let expr="";["AC","(",")","÷","7","8","9","×","4","5","6","−","1","2","3","+","±","0",".","="].forEach(k=>{const b=document.createElement("button");b.textContent=k;if(["÷","×","−","+","="].includes(k))b.classList.add(k==="="?"eq":"op");b.addEventListener("click",()=>{if(k==="AC"){expr="";display.textContent="0";return}if(k==="="){try{const e=expr.replace(/÷/g,"/").replace(/×/g,"*").replace(/−/g,"-");if(!/^[0-9+*/().% \\-]+$/.test(e))throw Error();const result=Function('"use strict";return ('+e+')')();if(!Number.isFinite(result))throw Error();expr=String(result);display.textContent=expr;}catch{display.textContent="Error";expr=""}return}if(k==="±"){if(expr)expr=expr.startsWith("-")?expr.slice(1):"-"+expr}else expr+=({"÷":"/","×":"*","−":"-"}[k]||k);display.textContent=expr||"0"});keys.appendChild(b)});`;
-  } else {
-    files["index.html"] = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Portfolio</title></head><body><header><a class="brand" href="#">YOUR NAME</a><nav><a href="#work">Work</a><a href="#about">About</a><a href="#contact">Contact</a></nav></header><main><section class="hero"><p class="tag">DESIGNER · DEVELOPER · CREATOR</p><h1>Hello, I'm <span>Your Name.</span></h1><p class="intro">I create digital experiences that are useful, thoughtful, and beautiful.</p><a class="button" href="#work">Explore my work ↗</a></section><section id="work"><h2>Selected work</h2><div class="cards"><article><span>01</span><h3>Project One</h3><p>A short description of this project.</p></article><article><span>02</span><h3>Project Two</h3><p>A short description of this project.</p></article><article><span>03</span><h3>Project Three</h3><p>A short description of this project.</p></article></div></section><section id="about"><h2>A little about me</h2><p>Write a short introduction here.</p></section><section id="contact"><h2>Let's connect</h2><p>your.email@example.com</p></section></main><footer>© 2026 Your Name</footer></body></html>`;
-    files["style.css"] = `*{box-sizing:border-box;scroll-behavior:smooth}body{margin:0;background:#0b0d13;color:#f4f4fb;font-family:Inter,system-ui,sans-serif}header{display:flex;justify-content:space-between;align-items:center;padding:24px 8%;border-bottom:1px solid #ffffff15}.brand{font-weight:800;letter-spacing:2px}a{color:inherit;text-decoration:none}nav{display:flex;gap:22px;font-size:13px;color:#b9bfd1}.hero{padding:110px 8% 90px}.tag{font-size:10px;letter-spacing:2px;color:#a99aff}.hero h1{font-size:clamp(44px,8vw,85px);letter-spacing:-4px;max-width:800px;margin:22px 0}.hero h1 span{color:#a99aff}.intro{max-width:490px;line-height:1.8;color:#aab2c6}.button{display:inline-block;margin-top:20px;padding:13px 17px;border-radius:10px;background:#8274f5}main>section:not(.hero){padding:55px 8%}h2{font-size:28px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.cards article{padding:23px;border:1px solid #ffffff18;background:#ffffff08;border-radius:15px}.cards span{color:#a99aff}.cards p,section>p{color:#aab2c6;line-height:1.8}footer{padding:24px 8%;border-top:1px solid #ffffff15;color:#7e879e}@media(max-width:650px){header{padding:20px 5%}nav{gap:10px}.hero{padding:75px 6%}.hero h1{letter-spacing:-2px}.cards{grid-template-columns:1fr}main>section:not(.hero){padding:40px 6%}}`;
-    files["script.js"] = `// Add your portfolio interactions here.`;
-  }
-  return {id:uid(),name,files,activeFile:"index.html",created:Date.now(),updated:Date.now()};
-}
-
-function loadProjects() {
-  try {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (Array.isArray(data) && data.length) projects = data.filter(p => p && p.id && p.files && typeof p.files === "object");
-  } catch(e) { console.warn("Could not load saved projects",e); }
-  if (!projects.length) {
-    projects = [makeProject("Welcome Project","blank")];
-    saveProjects(false);
-  }
-  let wanted = localStorage.getItem(ACTIVE_KEY);
-  activeProjectId = projects.some(p => p.id === wanted) ? wanted : projects[0].id;
-  const p = getProject();
-  activeFilePath = p.activeFile && p.files[p.activeFile] !== undefined ? p.activeFile : (Object.keys(p.files)[0] || "index.html");
-  renderAll();
-  loadEditor();
-}
-function saveProjects(showStatus=true) {
-  try {
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(projects));
-    if(activeProjectId) localStorage.setItem(ACTIVE_KEY,activeProjectId);
-    if(showStatus) {
-      $("saveStatus").textContent="Saved locally";
-      $("saveStatus").style.color="var(--green)";
-    }
-    return true;
-  } catch(e) {
-    $("saveStatus").textContent="Storage full";
-    toast("Could not save. Export your project to keep a backup.");
-    return false;
-  }
-}
+function saveProjects(showStatus=true){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(projects));if(activeProjectId)localStorage.setItem(ACTIVE_KEY,activeProjectId);if(showStatus){$("saveStatus").textContent="Saved locally";$("saveStatus").style.color="var(--green)"}return true}catch(e){$("saveStatus").textContent="Storage full";toast("Could not save. Export your project to keep a backup.");return false}}
 function getProject(){return projects.find(p=>p.id===activeProjectId)||projects[0]}
-function safeName(name){return String(name||"").trim().replace(/[<>:"|?*\u0000-\u001f]/g,"").slice(0,70)||"Untitled Project"}
+function safeName(n){return String(n||"").trim().replace(/[<>:"|?*\u0000-\u001f]/g,"").slice(0,70)||"Untitled Project"}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function escapeAttr(s){return escapeHTML(s)}
 function getExtension(path){return path.split(".").pop().toLowerCase()}
-function languageFor(path){const e=getExtension(path);return ({html:"HTML",htm:"HTML",css:"CSS",js:"JavaScript",mjs:"JavaScript",json:"JSON",md:"Markdown",py:"Python",txt:"Text",svg:"SVG"})[e]||e.toUpperCase()}
-function iconFor(path){const e=getExtension(path);return ({html:"🌐",htm:"🌐",css:"🎨",js:"🟨",mjs:"🟨",json:"{}",md:"▤",py:"🐍",svg:"◇"})[e]||"📄"}
-
+function languageFor(path){const e=getExtension(path);return({html:"HTML",htm:"HTML",css:"CSS",js:"JavaScript",mjs:"JavaScript",json:"JSON",md:"Markdown",py:"Python",txt:"Text",svg:"SVG"})[e]||e.toUpperCase()}
+function iconFor(path){const e=getExtension(path);return({html:"🌐",htm:"🌐",css:"🎨",js:"🟨",mjs:"🟨",json:"{}",md:"▤",py:"🐍",svg:"◇"})[e]||"📄"}
 function renderAll(){renderProjects();renderTree();renderTabs();$("topProjectName").textContent=getProject().name}
 function renderProjects(){
-  $("projectList").innerHTML="";
-  projects.forEach(p=>{
-    const el=document.createElement("div");
-    el.className="project-item"+(p.id===activeProjectId?" active":"");
-    el.innerHTML=`<span>▣</span><span class="project-name" title="${escapeAttr(p.name)}">${escapeHTML(p.name)}</span><button class="mini-action" title="Project options">···</button>`;
-    el.querySelector(".project-name").onclick=()=>switchProject(p.id);
-    el.querySelector("button").onclick=e=>{e.stopPropagation();showProjectOptions(p.id)};
-    $("projectList").appendChild(el);
-  });
+ $("projectList").innerHTML="";
+ projects.forEach(p=>{const el=document.createElement("div");el.className="project-item"+(p.id===activeProjectId?" active":"");el.innerHTML=`<span>▣</span><span class="project-name" title="${escapeAttr(p.name)}">${escapeHTML(p.name)}</span><button class="mini-action" title="Project options">···</button>`;el.querySelector(".project-name").onclick=()=>switchProject(p.id);el.querySelector("button").onclick=e=>{e.stopPropagation();showProjectOptions(p.id)};$("projectList").appendChild(el)});
 }
 function renderTree(){
-  const p=getProject(), root=$("fileTree");root.innerHTML="";
-  const paths=Object.keys(p.files).sort((a,b)=>a.localeCompare(b));
-  const folders=new Set();
-  paths.forEach(path=>{const parts=path.split("/");for(let i=1;i<parts.length;i++)folders.add(parts.slice(0,i).join("/"))});
-  const all=[...folders].map(path=>({path,folder:true})).concat(paths.map(path=>({path,folder:false}))).sort((a,b)=>{
-    const aa=a.path.split("/").length,bb=b.path.split("/").length;
-    if(aa!==bb)return aa-bb;
-    return a.path.localeCompare(b.path)||Number(b.folder)-Number(a.folder);
-  });
-  all.forEach(item=>{
-    const row=document.createElement("div");
-    row.className="tree-row"+(item.path===activeFilePath&&!item.folder?" active":"")+(item.folder?" tree-folder":"");
-    const depth=item.path.split("/").length-1;
-    row.style.paddingLeft=(6+depth*12)+"px";
-    row.innerHTML=`<span>${item.folder?"📁":iconFor(item.path)}</span><span class="path">${escapeHTML(item.folder?item.path.split("/").pop():item.path.split("/").pop())}</span>${item.folder?"":'<span class="file-actions">·</span>'}`;
-    if(!item.folder)row.onclick=()=>switchFile(item.path);
-    root.appendChild(row);
-  });
+ const p=getProject(),root=$("fileTree");root.innerHTML="";
+ const paths=Object.keys(p.files).sort((a,b)=>a.localeCompare(b)),folders=new Set();
+ paths.forEach(path=>{const parts=path.split("/");for(let i=1;i<parts.length;i++)folders.add(parts.slice(0,i).join("/"))});
+ const all=[...folders].map(path=>({path,folder:true})).concat(paths.map(path=>({path,folder:false}))).sort((a,b)=>{const aa=a.path.split("/").length,bb=b.path.split("/").length;if(aa!==bb)return aa-bb;return a.path.localeCompare(b.path)||Number(b.folder)-Number(a.folder)});
+ all.forEach(item=>{
+  const row=document.createElement("div");row.className="tree-row"+(item.path===activeFilePath&&!item.folder?" active":"")+(item.folder?" tree-folder":"");
+  row.style.paddingLeft=(6+(item.path.split("/").length-1)*12)+"px";
+  row.innerHTML=`<span>${item.folder?"📁":iconFor(item.path)}</span><span class="path">${escapeHTML(item.path.split("/").pop())}</span>${item.folder?"":'<span class="file-actions"><button class="file-delete" title="Delete file" aria-label="Delete '+escapeAttr(item.path)+'">×</button></span>'}`;
+  if(!item.folder)row.onclick=()=>switchFile(item.path);
+  const del=row.querySelector(".file-delete");if(del)del.onclick=e=>{e.stopPropagation();deleteFile(item.path)};
+  root.appendChild(row);
+ });
 }
-function renderTabs(){
-  const p=getProject();$("fileTabs").innerHTML="";
-  Object.keys(p.files).forEach(path=>{
-    const tab=document.createElement("div");tab.className="tab"+(path===activeFilePath?" active":"");
-    tab.innerHTML=`<span>${iconFor(path)}</span><span>${escapeHTML(path.split("/").pop())}</span>`;
-    tab.title=path;tab.onclick=()=>switchFile(path);$("fileTabs").appendChild(tab);
-  });
-}
+function renderTabs(){const p=getProject();$("fileTabs").innerHTML="";Object.keys(p.files).forEach(path=>{const tab=document.createElement("div");tab.className="tab"+(path===activeFilePath?" active":"");tab.innerHTML=`<span>${iconFor(path)}</span><span>${escapeHTML(path.split("/").pop())}</span>`;tab.title=path;tab.onclick=()=>switchFile(path);$("fileTabs").appendChild(tab)})}
 function loadEditor(){
-  const p=getProject();
-  if(p.files[activeFilePath]===undefined)activeFilePath=Object.keys(p.files)[0]||"index.html";
-  if(p.files[activeFilePath]===undefined)p.files["index.html"]=starterHTML,activeFilePath="index.html";
-  $("codeEditor").value=p.files[activeFilePath]||"";
-  $("languageLabel").textContent=languageFor(activeFilePath);
-  $("aiContextLabel").textContent="Context: "+activeFilePath;
-  renderAll();syncLineNumbers();updateCursor();
+ const p=getProject(),paths=Object.keys(p.files);
+ if(p.files[activeFilePath]===undefined)activeFilePath=paths[0]||"index.html";
+ if(p.files[activeFilePath]===undefined){p.files["index.html"]="";activeFilePath="index.html"}
+ $("codeEditor").value=p.files[activeFilePath]||"";$("languageLabel").textContent=languageFor(activeFilePath);$("aiContextLabel").textContent="Context: "+activeFilePath;renderAll();syncLineNumbers();updateCursor();
 }
-function switchProject(id){
-  saveCurrentFile();activeProjectId=id;
-  const p=getProject();activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");
-  chatHistory=[];$("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>New project conversation</h3><p>Ask the AI about this project.</p></div>';
-  saveProjects();renderAll();loadEditor();toast("Opened "+p.name);
-}
+function switchProject(id){saveCurrentFile();activeProjectId=id;const p=getProject();activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");chatHistory=[];$("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>New project conversation</h3><p>Ask the AI about this project.</p></div>';saveProjects();renderAll();loadEditor();toast("Opened "+p.name)}
 function switchFile(path){saveCurrentFile();activeFilePath=path;getProject().activeFile=path;saveProjects();loadEditor()}
-function saveCurrentFile(){
-  if(!activeProjectId||!getProject())return;
-  getProject().files[activeFilePath]=$("codeEditor").value;
-  getProject().activeFile=activeFilePath;getProject().updated=Date.now();
-}
-function onEditorInput(){
-  saveCurrentFile();saveProjects();syncLineNumbers();renderTabs();updateCursor();
-  $("saveStatus").textContent="Saved locally";
-}
-function syncLineNumbers(){
-  const lines=$("codeEditor").value.split("\n").length;
-  $("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");
-  $("lineNumbers").scrollTop=$("codeEditor").scrollTop;
-  $("lineCount").textContent=lines+" line"+(lines===1?"":"s");
-}
-function updateCursor(){
-  const t=$("codeEditor"),before=t.value.slice(0,t.selectionStart),lines=before.split("\n");
-  $("cursorLabel").textContent="Ln "+lines.length+", Col "+(lines[lines.length-1].length+1);
-}
-$("codeEditor").addEventListener("click",updateCursor);
-$("codeEditor").addEventListener("keyup",updateCursor);
-
-function editorKeydown(e){
-  const t=e.target;
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveCurrentFile();saveProjects();toast("Project saved");return}
-  if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();runPreview();return}
-  if(e.key==="Tab"){
-    e.preventDefault();
-    const start=t.selectionStart,end=t.selectionEnd;
-    t.setRangeText("  ",start,end,"end");onEditorInput();
-  }
-}
-function showView(view){
-  currentView=view;
-  $("previewArea").classList.toggle("show",view==="preview");
-  $("editorTab").classList.toggle("active",view==="editor");
-  $("previewTab").classList.toggle("active",view==="preview");
-  if(view==="preview")runPreview();
-}
-function mobileView(which){
-  mobilePanel=which;
-  $("mobileProjects").classList.toggle("active",which==="projects");
-  $("mobileEditor").classList.toggle("active",which==="editor");
-  $("mobileAI").classList.toggle("active",which==="ai");
-  document.querySelector(".left-panel").style.display=which==="projects"?"flex":"none";
-  document.querySelector(".right-panel").style.display=which==="ai"?"flex":"none";
-  document.querySelector(".center").style.display=which==="editor"?"flex":"none";
-}
+function saveCurrentFile(){if(!activeProjectId||!getProject())return;getProject().files[activeFilePath]=$("codeEditor").value;getProject().activeFile=activeFilePath;getProject().updated=Date.now()}
+function onEditorInput(){saveCurrentFile();saveProjects();syncLineNumbers();renderTabs();updateCursor();$("saveStatus").textContent="Saved locally"}
+function syncLineNumbers(){const lines=$("codeEditor").value.split("\n").length;$("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");$("lineNumbers").scrollTop=$("codeEditor").scrollTop;$("lineCount").textContent=lines+" line"+(lines===1?"":"s")}
+function updateCursor(){const t=$("codeEditor"),before=t.value.slice(0,t.selectionStart),lines=before.split("\n");$("cursorLabel").textContent="Ln "+lines.length+", Col "+(lines[lines.length-1].length+1)}
+$("codeEditor").addEventListener("click",updateCursor);$("codeEditor").addEventListener("keyup",updateCursor);
+function editorKeydown(e){const t=e.target;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveCurrentFile();saveProjects();toast("Project saved");return}if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();runPreview();return}if(e.key==="Tab"){e.preventDefault();t.setRangeText("  ",t.selectionStart,t.selectionEnd,"end");onEditorInput()}}
+function showView(view){currentView=view;$("previewArea").classList.toggle("show",view==="preview");$("editorTab").classList.toggle("active",view==="editor");$("previewTab").classList.toggle("active",view==="preview");if(view==="preview")runPreview()}
+function mobileView(which){mobilePanel=which;$("mobileProjects").classList.toggle("active",which==="projects");$("mobileEditor").classList.toggle("active",which==="editor");$("mobileAI").classList.toggle("active",which==="ai");document.querySelector(".left-panel").style.display=which==="projects"?"flex":"none";document.querySelector(".right-panel").style.display=which==="ai"?"flex":"none";document.querySelector(".center").style.display=which==="editor"?"flex":"none"}
 function getPreviewHTML(){
-  const files=getProject().files;
-  let html=files["index.html"]||files[activeFilePath]||starterHTML;
-  const css=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".css")).map(([,v])=>v).join("\n");
-  const js=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".js")||p.toLowerCase().endsWith(".mjs")).map(([,v])=>v).join("\n;\n");
-  if(css){
-    if(/<\/head>/i.test(html))html=html.replace(/<\/head>/i,`<style>${css.replace(/<\/style/gi,"<\\/style")}</style></head>`);
-    else html=`<style>${css.replace(/<\/style/gi,"<\\/style")}</style>`+html;
-  }
-  if(js){
-    const script=`<script>${js.replace(/<\/script/gi,"<\\/script")}<\/script>`;
-    if(/<\/body>/i.test(html))html=html.replace(/<\/body>/i,script+"</body>");
-    else html+=script;
-  }
-  return html;
+ const files=getProject().files;let html=files["index.html"]||files[activeFilePath]||"";
+ const css=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".css")).map(([,v])=>v).join("\n");
+ const js=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".js")||p.toLowerCase().endsWith(".mjs")).map(([,v])=>v).join("\n;\n");
+ if(css){if(/<\/head>/i.test(html))html=html.replace(/<\/head>/i,`<style>${css.replace(/<\/style/gi,"<\\/style")}</style></head>`);else html=`<style>${css.replace(/<\/style/gi,"<\\/style")}</style>`+html}
+ if(js){const script=`<script>${js.replace(/<\/script/gi,"<\\/script")}<\/script>`;if(/<\/body>/i.test(html))html=html.replace(/<\/body>/i,script+"</body>");else html+=script}
+ return html;
 }
-function runPreview(){
-  saveCurrentFile();saveProjects();
-  const html=getPreviewHTML();
-  $("previewFrame").srcdoc=html;
-  if(currentView!=="preview")showView("preview");
-  toast("Preview updated");
-}
-function openPreviewTab(){
-  const blob=new Blob([getPreviewHTML()],{type:"text/html"});
-  if(lastPreviewUrl)URL.revokeObjectURL(lastPreviewUrl);
-  lastPreviewUrl=URL.createObjectURL(blob);
-  window.open(lastPreviewUrl,"_blank","noopener");
-}
-function downloadBlob(content,filename,type="text/plain"){
-  const url=URL.createObjectURL(new Blob([content],{type}));
-  const a=document.createElement("a");a.href=url;a.download=filename;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1500);
-}
-function downloadStandalone(){
-  saveCurrentFile();
-  downloadBlob(getPreviewHTML(),safeName(getProject().name).replace(/\s+/g,"-")+".html","text/html");
-  toast("Standalone HTML exported");
-}
-function downloadCurrentFile(){
-  const p=getProject(),content=p.files[activeFilePath]||"";
-  downloadBlob(content,activeFilePath.split("/").pop());
-  toast("File downloaded");
-}
-async function exportProject(){
-  saveCurrentFile();saveProjects();
-  if(!window.JSZip){toast("ZIP library unavailable. Download files individually.");return}
-  try{
-    const zip=new JSZip(),folder=zip.folder(safeName(getProject().name).replace(/[\\/:*?"<>|]/g,"-"));
-    Object.entries(getProject().files).forEach(([path,content])=>folder.file(path,content));
-    folder.file("README.txt",getProject().name+"\nCreated with CodeStudio AI.\nOpen index.html to run this project.\n");
-    const blob=await zip.generateAsync({type:"blob"});
-    const url=URL.createObjectURL(blob),a=document.createElement("a");
-    a.href=url;a.download=safeName(getProject().name).replace(/\s+/g,"-")+".zip";
-    a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast("Project ZIP exported");
-  }catch(e){toast("Could not create ZIP: "+e.message)}
-}
-function formatCode(){
-  const t=$("codeEditor"),ext=getExtension(activeFilePath);
-  if(!["html","htm","css","js","mjs","json"].includes(ext)){toast("Basic formatting is supported for HTML, CSS, JS and JSON.");return}
-  try{
-    if(ext==="json"){t.value=JSON.stringify(JSON.parse(t.value),null,2)}
-    else{
-      let indent=0,formatted=[];
-      t.value.split("\n").forEach(line=>{
-        let s=line.trim();if(!s)return;
-        if(/^<\/[^>]+/.test(s)||/^[}\]]/.test(s))indent=Math.max(0,indent-1);
-        formatted.push("  ".repeat(indent)+s);
-        const opens=(s.match(/{/g)||[]).length,closes=(s.match(/}/g)||[]).length;
-        if(!/^\/\//.test(s))indent=Math.max(0,indent+opens-closes);
-      });
-      t.value=formatted.join("\n");
-    }
-    onEditorInput();toast("Basic formatting applied");
-  }catch(e){toast("Could not format: "+e.message)}
-}
+function runPreview(){saveCurrentFile();saveProjects();$("previewFrame").srcdoc=getPreviewHTML();if(currentView!=="preview")showView("preview");toast("Preview updated")}
+function openPreviewTab(){const blob=new Blob([getPreviewHTML()],{type:"text/html"});if(lastPreviewUrl)URL.revokeObjectURL(lastPreviewUrl);lastPreviewUrl=URL.createObjectURL(blob);window.open(lastPreviewUrl,"_blank","noopener")}
+function downloadBlob(content,filename,type="text/plain"){const url=URL.createObjectURL(new Blob([content],{type})),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function downloadStandalone(){saveCurrentFile();downloadBlob(getPreviewHTML(),safeName(getProject().name).replace(/\s+/g,"-")+".html","text/html");toast("Standalone HTML exported")}
+function downloadCurrentFile(){downloadBlob(getProject().files[activeFilePath]||"",activeFilePath.split("/").pop());toast("File downloaded")}
+async function exportProject(){saveCurrentFile();saveProjects();if(!window.JSZip){toast("ZIP library unavailable.");return}try{const zip=new JSZip(),folder=zip.folder(safeName(getProject().name).replace(/[\\/:*?"<>|]/g,"-"));Object.entries(getProject().files).forEach(([path,content])=>folder.file(path,content));folder.file("README.txt",getProject().name+"\nCreated with CodeStudio AI.\n");const blob=await zip.generateAsync({type:"blob"});downloadBlob(blob,safeName(getProject().name).replace(/\s+/g,"-")+".zip","application/zip");toast("Project ZIP exported")}catch(e){toast("Could not create ZIP: "+e.message)}}
+function formatCode(){const t=$("codeEditor"),ext=getExtension(activeFilePath);if(!["html","htm","css","js","mjs","json"].includes(ext)){toast("Basic formatting is supported for HTML, CSS, JS and JSON.");return}try{if(ext==="json")t.value=JSON.stringify(JSON.parse(t.value),null,2);else{let indent=0,formatted=[];t.value.split("\n").forEach(line=>{let s=line.trim();if(!s)return;if(/^<\/[^>]+/.test(s)||/^[}\]]/.test(s))indent=Math.max(0,indent-1);formatted.push("  ".repeat(indent)+s);const opens=(s.match(/{/g)||[]).length,closes=(s.match(/}/g)||[]).length;if(!/^\/\//.test(s))indent=Math.max(0,indent+opens-closes)});t.value=formatted.join("\n")}onEditorInput();toast("Basic formatting applied")}catch(e){toast("Could not format: "+e.message)}}
 function openNewProject(){$("newProjectName").value="";$("projectTemplate").value="blank";openModal("projectModal");$("newProjectName").focus()}
-function createProject(){
-  const name=safeName($("newProjectName").value);
-  if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast("A project with that name already exists.");return}
-  const p=makeProject(name,$("projectTemplate").value);projects.unshift(p);activeProjectId=p.id;activeFilePath="index.html";
-  saveProjects();renderAll();loadEditor();closeModal("projectModal");showView("editor");toast("Project created");
-}
+function createProject(){const name=safeName($("newProjectName").value);if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast("A project with that name already exists.");return}const p=makeProject(name,$("projectTemplate").value);projects.unshift(p);activeProjectId=p.id;activeFilePath="index.html";saveProjects();renderAll();loadEditor();closeModal("projectModal");showView("editor");toast("Project created")}
 function openNewFile(){$("newFilePath").value="";$("newFileType").value="custom";openModal("fileModal");$("newFilePath").focus()}
-function suggestFilePath(){
-  const type=$("newFileType").value;
-  if(type!=="custom")$("newFilePath").value=({html:"pages/page.html",css:"style.css",js:"script.js",json:"data.json"})[type];
+function suggestFilePath(){const type=$("newFileType").value;if(type!=="custom")$("newFilePath").value=({html:"pages/page.html",css:"style.css",js:"script.js",json:"data.json"})[type]}
+function createFile(){const path=$("newFilePath").value.trim().replace(/\\/g,"/");if(!path||path.startsWith("/")||path.split("/").some(x=>!x||x===".."||x===".")){toast("Enter a valid relative file path.");return}if(getProject().files[path]!==undefined){toast("That file already exists.");return}saveCurrentFile();const ext=getExtension(path);getProject().files[path]=ext==="html"?"":ext==="css"?"":ext==="js"?"":ext==="json"?"{\n  \n}\n":"";activeFilePath=path;getProject().activeFile=path;saveProjects();renderAll();loadEditor();closeModal("fileModal");toast("File added")}
+function deleteFile(path){
+ const p=getProject();if(p.files[path]===undefined)return;
+ if(!confirm('Delete "'+path+'"? This cannot be undone.'))return;
+ saveCurrentFile();delete p.files[path];
+ const remaining=Object.keys(p.files).sort();
+ if(!remaining.length)p.files["index.html"]="";
+ if(activeFilePath===path)activeFilePath=Object.keys(p.files).sort()[0];
+ p.activeFile=activeFilePath;p.updated=Date.now();saveProjects();renderAll();loadEditor();toast("File deleted");
 }
-function createFile(){
-  const path=$("newFilePath").value.trim().replace(/\\/g,"/");
-  if(!path||path.startsWith("/")||path.split("/").some(part=>!part||part===".."||part===".")){toast("Enter a valid relative file path.");return}
-  if(path.endsWith("/")){toast("Enter a filename, such as src/app.js.");return}
-  if(getProject().files[path]!==undefined){toast("That file already exists.");return}
-  saveCurrentFile();
-  const ext=getExtension(path);
-  getProject().files[path]=ext==="html"?"<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>New Page</title>\n</head>\n<body>\n  <h1>Hello!</h1>\n</body>\n</html>\n":ext==="css"?"/* Your styles */\n":ext==="js"?"// Your JavaScript\n":ext==="json"?"{\n  \n}\n":"";
-  activeFilePath=path;getProject().activeFile=path;saveProjects();renderAll();loadEditor();closeModal("fileModal");toast("File added");
-}
-function showProjectOptions(id){
-  const p=projects.find(x=>x.id===id);if(!p)return;
-  const action=prompt("Project: "+p.name+"\nType R to rename, D to duplicate, or X to delete.");
-  if(!action)return;
-  if(action.toLowerCase()==="r"){renameTargetId=id;$("renameInput").value=p.name;openModal("renameModal")}
-  else if(action.toLowerCase()==="d"){
-    const copy=JSON.parse(JSON.stringify(p));copy.id=uid();copy.name=p.name+" Copy";copy.created=Date.now();copy.updated=Date.now();
-    projects.unshift(copy);saveProjects();renderAll();toast("Project duplicated");
-  } else if(action.toLowerCase()==="x"){
-    if(!confirm('Delete "'+p.name+'"? This cannot be undone. Export a backup first if needed.'))return;
-    projects=projects.filter(x=>x.id!==id);
-    if(!projects.length)projects.push(makeProject("Welcome Project","blank"));
-    if(activeProjectId===id){activeProjectId=projects[0].id;activeFilePath=projects[0].activeFile||"index.html";chatHistory=[];}
-    saveProjects();renderAll();loadEditor();toast("Project deleted");
-  }
-}
-function renameProject(){
-  const p=projects.find(x=>x.id===renameTargetId);if(!p)return;
-  const name=safeName($("renameInput").value);
-  if(projects.some(x=>x.id!==p.id&&x.name.toLowerCase()===name.toLowerCase())){toast("That name is already used.");return}
-  p.name=name;saveProjects();renderAll();closeModal("renameModal");toast("Project renamed");
-}
+function showProjectOptions(id){const p=projects.find(x=>x.id===id);if(!p)return;const action=prompt("Project: "+p.name+"\nType R to rename, D to duplicate, or X to delete.");if(!action)return;if(action.toLowerCase()==="r"){renameTargetId=id;$("renameInput").value=p.name;openModal("renameModal")}else if(action.toLowerCase()==="d"){const copy=JSON.parse(JSON.stringify(p));copy.id=uid();copy.name=p.name+" Copy";copy.created=Date.now();copy.updated=Date.now();projects.unshift(copy);saveProjects();renderAll();toast("Project duplicated")}else if(action.toLowerCase()==="x"){if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;projects=projects.filter(x=>x.id!==id);if(!projects.length)projects.push(makeProject("Code Project","blank"));if(activeProjectId===id){activeProjectId=projects[0].id;activeFilePath=projects[0].activeFile||"index.html";chatHistory=[]}saveProjects();renderAll();loadEditor();toast("Project deleted")}}
+function renameProject(){const p=projects.find(x=>x.id===renameTargetId);if(!p)return;const name=safeName($("renameInput").value);if(projects.some(x=>x.id!==p.id&&x.name.toLowerCase()===name.toLowerCase())){toast("That name is already used.");return}p.name=name;saveProjects();renderAll();closeModal("renameModal");toast("Project renamed")}
 function openModal(id){$(id).classList.add("open")}
 function closeModal(id){$(id).classList.remove("open")}
 document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.classList.remove("open")}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".overlay.open").forEach(o=>o.classList.remove("open"))});
-
-function setMode(mode,el){
-  aiMode=mode;
-  document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("active",b===el));
-  const placeholders={
-    write:"Describe the code you want me to write...",
-    debug:"Describe the bug or ask me to inspect your code...",
-    fix:"Describe the issue you want fixed...",
-    review:"Ask for a UI/UX review or improvements...",
-    explain:"Which part of the code would you like explained?",
-    feature:"Describe the feature you want to add..."
-  };
-  $("aiInput").placeholder=placeholders[mode]||"Ask the AI...";
-  if(mode==="review"){$("aiInput").value="Review the UI/UX of my current project. Give a structured review of design, usability, responsiveness, accessibility, and specific improvements."}
-  else if(mode==="debug"){$("aiInput").value="Inspect my current project for likely bugs, broken interactions, and errors. Explain each issue and how to reproduce it."}
-  else if(mode==="fix"){$("aiInput").value="Inspect my current project for mistakes and propose corrected code. Return complete replacement code for each file that needs changing."}
-  $("aiInput").focus();
-}
+function setMode(mode,el){aiMode=mode;document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("active",b===el));const placeholders={write:"Describe the code you want me to write...",debug:"Describe the bug or ask me to inspect your code...",fix:"Describe the issue you want fixed...",review:"Ask for a UI/UX review or improvements...",explain:"Which part of the code would you like explained?",feature:"Describe the feature you want to add..."};$("aiInput").placeholder=placeholders[mode]||"Ask the AI...";if(mode==="review")$("aiInput").value="Review and improve the UI/UX of my current project. Apply the improvements directly to the existing files.";else if(mode==="debug")$("aiInput").value="Inspect my current project for bugs and fix them directly in the existing files.";else if(mode==="fix")$("aiInput").value="Fix the issue in my project by editing only the necessary parts of the existing code.";$("aiInput").focus()}
 function quickPrompt(prompt){$("aiInput").value=prompt;$("aiInput").focus()}
-function attachCurrentFile(){
-  const p=getProject(),content=p.files[activeFilePath]||"";
-  $("aiInput").value+=($("aiInput").value?"\n\n":"")+"Please focus on this file: "+activeFilePath+"\n```"+getExtension(activeFilePath)+"\n"+content+"\n```";
-  $("aiInput").focus();
-}
+function attachCurrentFile(){$("aiInput").value+=($("aiInput").value?"\n\n":"")+"Please focus on this file: "+activeFilePath;$("aiInput").focus()}
 function aiKeydown(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendToAI()}}
-function editorKeydownAI(e){aiKeydown(e)}
-function addMessage(role,content){
-  const log=$("chatLog"),empty=$("chatEmpty");if(empty)empty.remove();
-  const msg=document.createElement("div");msg.className="chat-message "+role;
-  const label=document.createElement("div");label.className="message-label";label.textContent=role==="user"?"YOU":"CODESTUDIO AI";
-  const body=document.createElement("div");body.className="message-body";body.textContent=content;
-  msg.append(label,body);log.appendChild(msg);log.scrollTop=log.scrollHeight;return msg;
-}
-function addAIMessage(content){
-  const msg=addMessage("assistant",content),body=msg.querySelector(".message-body");
-  body.innerHTML=formatAIText(content);return msg;
-}
+function addMessage(role,content){const log=$("chatLog"),empty=$("chatEmpty");if(empty)empty.remove();const msg=document.createElement("div");msg.className="chat-message "+role;const label=document.createElement("div");label.className="message-label";label.textContent=role==="user"?"YOU":"CODESTUDIO AI";const body=document.createElement("div");body.className="message-body";if(role==="user")body.textContent=content;else body.innerHTML=formatAIText(content);msg.append(label,body);log.appendChild(msg);log.scrollTop=log.scrollHeight;return msg}
+function addAIMessage(content){return addMessage("assistant",content)}
 function formatAIText(text){
-  let s=escapeHTML(text);
-  s=s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g,(_,lang,code)=>`<pre><div style="color:#a99aff;margin-bottom:6px">${escapeHTML(lang||"code")}</div><code>${code}</code><button style="margin-top:7px" onclick="copyText(this.nextElementSibling.textContent)">Copy code</button><textarea hidden>${escapeHTML(code)}</textarea></pre>`);
-  s=s.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
-  s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
-  s=s.replace(/\n/g,"<br>");
-  return s;
+ text=String(text??"");
+ if(window.marked&&window.DOMPurify){marked.setOptions({gfm:true,breaks:true});return DOMPurify.sanitize(marked.parse(text))}
+ let s=escapeHTML(text);s=s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g,(_,lang,code)=>`<pre><code>${code}</code></pre>`);s=s.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\n/g,"<br>");return s;
 }
 async function copyText(text){try{await navigator.clipboard.writeText(text);toast("Copied to clipboard")}catch(e){toast("Clipboard permission unavailable")}}
-function clearChat(){
-  chatHistory=[];
-  $("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>What are we building?</h3><p>Choose an action and ask about your current project.</p></div>';
-  toast("Conversation cleared");
-}
-function getAIContext(){
-  const p=getProject(),files=Object.entries(p.files);
-  const MAX_FILE=14000,MAX_TOTAL=42000;
-  let total=0,out=[];
-  for(const [path,content] of files){
-    if(total>=MAX_TOTAL){out.push("[Additional files omitted due to context limit.]");break}
-    const trimmed=String(content).slice(0,Math.min(MAX_FILE,MAX_TOTAL-total));
-    out.push("FILE: "+path+"\n```"+getExtension(path)+"\n"+trimmed+"\n```");
-    total+=trimmed.length;
-  }
-  return "PROJECT: "+p.name+"\nCURRENT FILE: "+activeFilePath+"\n\n"+out.join("\n\n");
-}
+function clearChat(){chatHistory=[];$("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>What are we building?</h3><p>Choose an action and ask about your current project.</p></div>';toast("Conversation cleared")}
+function getAIContext(){const p=getProject(),files=Object.entries(p.files);const MAX_FILE=14000,MAX_TOTAL=42000;let total=0,out=[];for(const[path,content]of files){if(total>=MAX_TOTAL){out.push("[Additional files omitted due to context limit.]");break}const trimmed=String(content).slice(0,Math.min(MAX_FILE,MAX_TOTAL-total));out.push("FILE: "+path+"\n```"+getExtension(path)+"\n"+trimmed+"\n```");total+=trimmed.length}return"PROJECT: "+p.name+"\nCURRENT FILE: "+activeFilePath+"\n\n"+out.join("\n\n")}
 function buildPrompt(userPrompt){
-  const instructions={
-    write:"You are a skilled web developer. Write working, practical code for the user's request. Respect their existing project structure. When changing code, provide complete replacement contents for each changed file in fenced code blocks and label each block with its exact file path. Explain where each file belongs. Do not claim you changed the files automatically.",
-    debug:"You are a careful debugging assistant. Inspect the provided code for likely syntax errors, runtime errors, logic bugs, broken event listeners, and integration problems. Separate confirmed problems from suspicions. Explain the cause, impact, and exact fix. If code changes are needed, provide complete replacement contents for affected files, labeled with file paths.",
-    fix:"You are a careful web developer. Identify likely errors in the project and propose corrected code. Preserve existing design and working features unless the user asks otherwise. Return complete replacement contents for each changed file in fenced code blocks, labeled with exact file paths. The user must apply the changes manually.",
-    review:"You are a senior UI/UX reviewer and frontend engineer. Review the supplied project for visual hierarchy, spacing, typography, consistency, responsiveness, keyboard access, accessibility, usability, and interaction states. Give a concise overall assessment, prioritized findings, and concrete improvements. Do not claim you visually inspected the live preview; you can inspect the supplied source code.",
-    explain:"You are a patient programming tutor. Explain the supplied code in clear language, describe the flow and key functions, and give a small example if helpful. Avoid changing code unless requested.",
-    feature:"You are a senior frontend developer. Help implement the requested feature within the current project. Respect existing naming and structure. Provide complete replacement contents for every file that must change, label each block with its exact file path, and explain how the files work together."
-  };
-  return instructions[aiMode]+"\n\nIMPORTANT: You are connected to a browser coding workspace. You cannot directly edit its editor or run its code. Never claim that you changed, saved, or executed project files. Provide code and instructions for the user to apply. For full file replacements use fenced code blocks with a filename label on the line before each block, like FILE: index.html.\n\n"+getAIContext()+"\n\nUSER REQUEST:\n"+userPrompt;
+ return `You are CodeStudio AI inside a coding editor. The user expects you to APPLY edits directly, not merely print code.
+Return ONLY valid JSON, with this schema:
+{"message":"A helpful Markdown explanation of what you did","edits":[{"path":"style.css","find":"an exact unique snippet from the existing file","replace":"the replacement snippet"}]}
+For a new file use {"path":"src/new.js","action":"create","content":"complete new file contents"}.
+Rules:
+- For code changes, make small, precise edits to the existing files. Never replace an entire existing file when a small targeted change will work.
+- Every "find" value must match exactly once in the supplied current project. Use enough surrounding lines to make it unique.
+- Multiple targeted edits may be returned for different files.
+- Only create new files when necessary.
+- For questions, reviews, and explanations that don't require code changes, return "edits":[].
+- Do not include Markdown fences around the JSON. Do not claim changes were applied unless the edits array contains the required changes.
+- Preserve existing features and visual design unless asked otherwise.
+- Use the exact file paths from the project context.
+CURRENT MODE: ${aiMode}
+PROJECT CONTEXT:
+${getAIContext()}
+USER REQUEST:
+${userPrompt}`;
 }
-function extractAIText(data){
-  if(typeof data==="string")return data;
-  if(!data||typeof data!=="object")return "";
-  if(typeof data.output==="string")return data.output;
-  if(typeof data.response==="string")return data.response;
-  if(typeof data.text==="string")return data.text;
-  if(typeof data.message==="string")return data.message;
-  if(typeof data.result==="string")return data.result;
-  if(Array.isArray(data.output))return data.output.map(x=>typeof x==="string"?x:(x.content||"")).join("\n");
-  if(data.choices?.[0]?.message?.content)return data.choices[0].message.content;
-  if(data.choices?.[0]?.text)return data.choices[0].text;
-  if(data.detail)return typeof data.detail==="string"?data.detail:JSON.stringify(data.detail);
-  return JSON.stringify(data,null,2);
+function extractAIText(data){if(typeof data==="string")return data;if(!data||typeof data!=="object")return"";for(const k of ["output","response","text","reply","message","result"])if(typeof data[k]==="string")return data[k];if(Array.isArray(data.output))return data.output.map(x=>typeof x==="string"?x:(x.content||"")).join("\n");if(data.choices?.[0]?.message?.content)return data.choices[0].message.content;if(data.choices?.[0]?.text)return data.choices[0].text;if(data.detail)return typeof data.detail==="string"?data.detail:JSON.stringify(data.detail);return JSON.stringify(data,null,2)}
+function parseAIResult(text){
+ let s=String(text).trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
+ try{return JSON.parse(s)}catch{return null}
+}
+function applyAIChanges(result){
+ if(!result||!Array.isArray(result.edits))return{ok:false,error:"The AI response did not contain a valid edits array."};
+ const p=getProject(),updated={...p.files};saveCurrentFile();
+ // Rebuild from the latest saved editor value.
+ updated[activeFilePath]=$("codeEditor").value;
+ for(const edit of result.edits){
+  if(!edit||typeof edit.path!=="string")return{ok:false,error:"One proposed edit had no valid file path."};
+  const path=edit.path.replace(/\\/g,"/");
+  if(!path||path.startsWith("/")||path.split("/").some(part=>part===".."||part==="."||!part))return{ok:false,error:"The AI proposed an unsafe file path."};
+  if(edit.action==="create"){
+   if(Object.prototype.hasOwnProperty.call(updated,path))return{ok:false,error:"The AI tried to create an existing file: "+path};
+   if(typeof edit.content!=="string")return{ok:false,error:"The new file content was missing for "+path};
+   updated[path]=edit.content;continue;
+  }
+  if(!Object.prototype.hasOwnProperty.call(updated,path))return{ok:false,error:"The AI referenced a file that does not exist: "+path};
+  if(typeof edit.find!=="string"||!edit.find.length||typeof edit.replace!=="string")return{ok:false,error:"An edit was missing its exact find/replace text."};
+  const content=String(updated[path]),first=content.indexOf(edit.find);
+  if(first<0)return{ok:false,error:"Couldn't find the exact code snippet in "+path+". Ask the AI to try again with a more precise match."};
+  if(content.indexOf(edit.find,first+1)>=0)return{ok:false,error:"The code snippet in "+path+" matches more than once. No changes were applied to avoid editing the wrong section."};
+  updated[path]=content.slice(0,first)+edit.replace+content.slice(first+edit.find.length);
+ }
+ p.files=updated;p.updated=Date.now();
+ if(p.files[activeFilePath]===undefined)activeFilePath=Object.keys(p.files).sort()[0]||"index.html";
+ p.activeFile=activeFilePath;saveProjects();renderAll();loadEditor();
+ return{ok:true,count:result.edits.length};
 }
 async function sendToAI(){
-  if(isThinking)return;
-  const input=$("aiInput"),userPrompt=input.value.trim();
-  if(!userPrompt){toast("Type a message for the AI first.");input.focus();return}
-  if(!getProject()){toast("Create a project first.");return}
-  saveCurrentFile();
-  addMessage("user",userPrompt);
-  input.value="";
-  const loading=document.createElement("div");loading.className="ai-loading";loading.innerHTML='<span class="spinner"></span><span>Thinking about your code…</span>';
-  $("chatLog").appendChild(loading);$("chatLog").scrollTop=$("chatLog").scrollHeight;
-  isThinking=true;$("sendAiBtn").disabled=true;$("sendAiBtn").textContent="…";
-  try{
-    const prompt=buildPrompt(userPrompt);
-    const response=await fetch("/api/chat",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        message:prompt,
-        prompt:prompt,
-        systemPrompt:"You are CodeStudio AI, an expert coding assistant.",
-        projectName:getProject().name,
-        currentFile:activeFilePath,
-        mode:aiMode
-      })
-    });
-    const raw=await response.text();
-    let data;
-    try{data=JSON.parse(raw)}catch(e){throw new Error("The server returned an invalid response. Check your Vercel /api/chat backend and its logs.")}
-    if(!response.ok)throw new Error(extractAIText(data)||("Server error "+response.status));
-    const answer=extractAIText(data);
-    if(!answer||answer==="{}")throw new Error("The AI returned an empty response. Check your backend's response format.");
-    addAIMessage(answer);
-  }catch(err){
-    addAIMessage("I couldn't complete that request.\n\n**Error:** "+(err.message||"Unknown error")+"\n\nCheck that your app is deployed on Vercel, that `/api/chat` exists, and that `REPLICATE_API_TOKEN` is configured in Vercel Environment Variables. If your backend expects a different request field or returns a different response shape, adjust the frontend or API handler to match.");
-  }finally{
-    loading.remove();isThinking=false;$("sendAiBtn").disabled=false;$("sendAiBtn").textContent="↑ Send";
-    $("chatLog").scrollTop=$("chatLog").scrollHeight;
+ if(isThinking)return;
+ const input=$("aiInput"),userPrompt=input.value.trim();
+ if(!userPrompt){toast("Type a message for the AI first.");input.focus();return}
+ if(!getProject()){toast("Create a project first.");return}
+ saveCurrentFile();addMessage("user",userPrompt);input.value="";
+ const loading=document.createElement("div");loading.className="ai-loading";loading.innerHTML='<span class="spinner"></span><span>Thinking about your code…</span>';$("chatLog").appendChild(loading);$("chatLog").scrollTop=$("chatLog").scrollHeight;
+ isThinking=true;$("sendAiBtn").disabled=true;$("sendAiBtn").textContent="…";
+ try{
+  const prompt=buildPrompt(userPrompt);
+  const response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:prompt,prompt:prompt,systemPrompt:"You are CodeStudio AI. Return valid JSON containing a Markdown message and targeted file edits. Never return full replacement files when targeted edits are possible.",projectName:getProject().name,currentFile:activeFilePath,mode:aiMode})});
+  const raw=await response.text();let data;try{data=JSON.parse(raw)}catch(e){throw new Error("The server returned an invalid response. Check your Vercel /api/chat backend and logs.")}
+  if(!response.ok)throw new Error(extractAIText(data)||("Server error "+response.status));
+  const answer=extractAIText(data);if(!answer||answer==="{}")throw new Error("The AI returned an empty response. Check the backend response format.");
+  const result=parseAIResult(answer);
+  if(result&&Array.isArray(result.edits)){
+   if(result.edits.length){
+    const applied=applyAIChanges(result);
+    if(!applied.ok){addAIMessage("**No code changes were applied.**\n\n"+applied.error+"\n\nPlease ask me to retry with smaller, more precise edits.");return}
+    addAIMessage((result.message||"Changes applied to your project.")+"\n\n**Applied "+applied.count+" edit"+(applied.count===1?"":"s")+" directly to your editor.**");
+    toast("AI changes applied");
+   }else addAIMessage(result.message||"Done.");
+  }else{
+   // A normal text response is still displayed as Markdown.
+   addAIMessage(answer);
   }
+ }catch(err){addAIMessage("I couldn't complete that request.\n\n**Error:** "+(err.message||"Unknown error")+"\n\nCheck that your Vercel deployment includes `/api/chat` and that `REPLICATE_API_TOKEN` is configured in Vercel Environment Variables.")}
+ finally{loading.remove();isThinking=false;$("sendAiBtn").disabled=false;$("sendAiBtn").textContent="↑ Send";$("chatLog").scrollTop=$("chatLog").scrollHeight}
 }
-function startReview(){
-  const scope=$("reviewScope").value;closeModal("reviewModal");
-  setMode("review",document.querySelector('[data-mode="review"]'));
-  const scopes={
-    full:"Review the entire project",
-    current:"Review only the current file "+activeFilePath,
-    responsive:"Focus on responsive design, mobile layouts, and small-screen usability",
-    accessibility:"Focus on accessibility, keyboard navigation, contrast, semantic HTML, and usability",
-    visual:"Focus on visual polish, layout, spacing, typography, colours, consistency, and interaction states"
-  };
-  $("aiInput").value=scopes[scope]+". Give prioritized findings, explain why each matters, and suggest concrete fixes. If code changes are useful, provide complete replacement files.";
-  sendToAI();
-}
-function toast(message){
-  const el=$("toast");el.textContent=message;el.classList.add("show");
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2600);
-}
+function startReview(){const scope=$("reviewScope").value;closeModal("reviewModal");setMode("review",document.querySelector('[data-mode="review"]'));const scopes={full:"Review the entire project",current:"Review only the current file "+activeFilePath,responsive:"Focus on responsive design, mobile layouts, and small-screen usability",accessibility:"Focus on accessibility, keyboard navigation, contrast, semantic HTML, and usability",visual:"Focus on visual polish, layout, spacing, typography, colours, consistency, and interaction states"};$("aiInput").value=scopes[scope]+". Give prioritized findings and apply useful code improvements directly to the existing files using small targeted edits.";sendToAI()}
+function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2600)}
 window.addEventListener("beforeunload",()=>{try{saveCurrentFile();saveProjects(false)}catch(e){}});
 loadProjects();
 </script>
