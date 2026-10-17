@@ -177,6 +177,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
     <div class="center-toolbar">
       <div class="segment"><button id="editorTab" class="active" onclick="showView('editor')">⌨ Editor</button><button id="previewTab" onclick="showView('preview')">◉ Preview</button></div>
       <div class="toolbar-spacer"></div>
+      <button id="undoBtn" title="Undo last change" onclick="undoChange()" disabled>↶ Undo</button>
       <button title="Format basic indentation" onclick="formatCode()">⇥ Format</button>
       <button title="Download current file" onclick="downloadCurrentFile()">↓ File</button>
       <button title="Export complete project as ZIP" onclick="exportProject()">▣ ZIP</button>
@@ -229,7 +230,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 "use strict";
 
 const STORAGE_KEY="codestudio_ai_projects_v1",ACTIVE_KEY="codestudio_ai_active_v1";
-let projects=[],activeProjectId=null,activeFilePath="index.html",aiMode="write",currentView="editor",mobilePanel="editor",renameTargetId=null,isThinking=false,toastTimer=null,chatHistory=[],lastPreviewUrl=null;
+let projects=[],activeProjectId=null,activeFilePath="index.html",aiMode="write",currentView="editor",mobilePanel="editor",renameTargetId=null,isThinking=false,toastTimer=null,chatHistory=[],lastPreviewUrl=null,undoStack=[],lastTypePush=0;
 const $=id=>document.getElementById(id);
 const starterHTML="",starterCSS="",starterJS="";
 
@@ -341,7 +342,7 @@ function loadEditor(){
  renderAll();syncLineNumbers();updateCursor();
 }
 function switchProject(id){
- saveCurrentFile();activeProjectId=id;const p=getProject();
+ saveCurrentFile();undoStack=[];updateUndoBtn();activeProjectId=id;const p=getProject();
  activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");
  chatHistory=[];
  $("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>New project conversation</h3><p>Ask the AI about this project.</p></div>';
@@ -353,7 +354,7 @@ function saveCurrentFile(){
  getProject().files[activeFilePath]=$("codeEditor").value;
  getProject().activeFile=activeFilePath;getProject().updated=Date.now();
 }
-function onEditorInput(){saveCurrentFile();saveProjects();syncLineNumbers();renderTabs();updateCursor();$("saveStatus").textContent="Saved locally"}
+function onEditorInput(){if(Date.now()-lastTypePush>1000)pushUndo();lastTypePush=Date.now();saveCurrentFile();saveProjects();syncLineNumbers();renderTabs();updateCursor();$("saveStatus").textContent="Saved locally"}
 function syncLineNumbers(){
  const lines=$("codeEditor").value.split("\n").length;
  $("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");
@@ -366,6 +367,24 @@ function updateCursor(){
 }
 $("codeEditor").addEventListener("click",updateCursor);
 $("codeEditor").addEventListener("keyup",updateCursor);
+function updateUndoBtn(){const b=$("undoBtn");if(b)b.disabled=!undoStack.length}
+function pushUndo(){
+ const p=getProject();if(!p)return;
+ undoStack.push({files:{...p.files},active:activeFilePath});
+ if(undoStack.length>50)undoStack.shift();
+ updateUndoBtn();
+}
+function undoChange(){
+ const snap=undoStack.pop();
+ if(!snap){toast("Nothing to undo");updateUndoBtn();return}
+ const p=getProject();
+ p.files={...snap.files};
+ activeFilePath=p.files[snap.active]!==undefined?snap.active:(Object.keys(p.files)[0]||"index.html");
+ p.activeFile=activeFilePath;p.updated=Date.now();lastTypePush=0;
+ saveProjects();renderAll();loadEditor();updateUndoBtn();
+ if(currentView==="preview")refreshPreviewFrame();
+ toast("Undid last change");
+}
 function editorKeydown(e){
  const t=e.target;
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveCurrentFile();saveProjects();toast("Project saved");return}
@@ -503,6 +522,7 @@ function formatCode(){
  const t=$("codeEditor"),ext=getExtension(activeFilePath);
  if(!["html","htm","css","js","mjs","json"].includes(ext)){toast("Basic formatting is supported for HTML, CSS, JS and JSON.");return}
  try{
+  saveCurrentFile();pushUndo();
   if(ext==="json")t.value=JSON.stringify(JSON.parse(t.value),null,2);
   else{
    let indent=0,formatted=[];
@@ -523,7 +543,7 @@ function createProject(){
  const name=safeName($("newProjectName").value);
  if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast("A project with that name already exists.");return}
  const p=makeProject(name,$("projectTemplate").value);
- projects.unshift(p);activeProjectId=p.id;activeFilePath="index.html";
+ projects.unshift(p);undoStack=[];updateUndoBtn();activeProjectId=p.id;activeFilePath="index.html";
  saveProjects();renderAll();loadEditor();closeModal("projectModal");showView("editor");
  $("previewFrame").srcdoc="";toast("Project created");
 }
@@ -536,14 +556,14 @@ function createFile(){
  const path=$("newFilePath").value.trim().replace(/\\/g,"/");
  if(!path||path.startsWith("/")||path.split("/").some(x=>!x||x===".."||x===".")){toast("Enter a valid relative file path.");return}
  if(getProject().files[path]!==undefined){toast("That file already exists.");return}
- saveCurrentFile();const ext=getExtension(path);
+ saveCurrentFile();pushUndo();const ext=getExtension(path);
  getProject().files[path]=ext==="json"?"{\n  \n}\n":"";
  activeFilePath=path;getProject().activeFile=path;saveProjects();renderAll();loadEditor();closeModal("fileModal");toast("File added");
 }
 function deleteFile(path){
  const p=getProject();if(p.files[path]===undefined)return;
  if(!confirm('Delete "'+path+'"? This cannot be undone.'))return;
- saveCurrentFile();delete p.files[path];
+ saveCurrentFile();pushUndo();delete p.files[path];
  const remaining=Object.keys(p.files).sort();
  if(!remaining.length)p.files["index.html"]="";
  if(activeFilePath===path)activeFilePath=Object.keys(p.files).sort()[0];
@@ -563,7 +583,7 @@ function showProjectOptions(id){
   if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;
   projects=projects.filter(x=>x.id!==id);
   if(!projects.length)projects.push(makeProject("Code Project","blank"));
-  if(activeProjectId===id){activeProjectId=projects[0].id;activeFilePath=projects[0].activeFile||"index.html";chatHistory=[]}
+  if(activeProjectId===id){undoStack=[];updateUndoBtn();activeProjectId=projects[0].id;activeFilePath=projects[0].activeFile||"index.html";chatHistory=[]}
   saveProjects();renderAll();loadEditor();toast("Project deleted");
  }
 }
@@ -677,7 +697,7 @@ function applyAIChanges(result){
   if(content.indexOf(edit.find,first+1)>=0)return{ok:false,error:"The code snippet in "+path+" matches more than once. No changes were applied to avoid editing the wrong section."};
   updated[path]=content.slice(0,first)+edit.replace+content.slice(first+edit.find.length);
  }
- p.files=updated;p.updated=Date.now();
+ pushUndo();p.files=updated;p.updated=Date.now();
  if(p.files[activeFilePath]===undefined)activeFilePath=Object.keys(p.files).sort()[0]||"index.html";
  p.activeFile=activeFilePath;saveProjects();renderAll();loadEditor();
  return{ok:true,count:result.edits.length};
