@@ -186,7 +186,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
     <div class="editor-area"><div class="editor-wrap"><div id="lineNumbers" class="line-numbers">1</div><textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code editor" placeholder="Write your code here..." oninput="onEditorInput()" onscroll="syncLineNumbers()" onkeydown="editorKeydown(event)"></textarea></div>
       <div class="editor-footer"><span id="languageLabel">HTML</span><span id="cursorLabel">Ln 1, Col 1</span><span id="lineCount">1 line</span><span style="margin-left:auto">UTF-8</span></div>
     </div>
-    <div class="preview-area" id="previewArea"><div style="height:40px;display:flex;align-items:center;padding:0 12px;gap:8px;background:#10131b;border-bottom:1px solid var(--line)"><span class="dot"></span><span class="small">Live preview</span><div style="flex:1"></div><button onclick="runPreview()">↻ Refresh</button><button onclick="openPreviewTab()">↗ Open separately</button></div><div class="preview-frame-wrap"><iframe id="previewFrame" class="preview-frame" title="App preview" sandbox="allow-scripts allow-forms allow-modals allow-downloads"></iframe></div><div class="preview-bottom"><span>Sandboxed browser preview</span><span style="margin-left:auto">Your project stays in this workspace</span></div></div>
+    <div class="preview-area" id="previewArea"><div style="height:40px;display:flex;align-items:center;padding:0 12px;gap:8px;background:#10131b;border-bottom:1px solid var(--line)"><span class="dot"></span><span class="small">Live preview</span><div style="flex:1"></div><button onclick="runPreview()">↻ Refresh</button><button onclick="openPreviewTab()">↗ Open separately</button></div><div class="preview-frame-wrap"><iframe id="previewFrame" class="preview-frame" title="App preview" sandbox="allow-scripts allow-forms allow-modals allow-downloads" srcdoc=""></iframe></div><div class="preview-bottom"><span>Sandboxed browser preview</span><span style="margin-left:auto">Your project stays in this workspace</span></div></div>
   </main>
   <aside class="panel right-panel">
     <div class="panel-head"><span>✦ AI Assistant</span><button class="ghost" onclick="clearChat()" title="Clear conversation">↺</button></div>
@@ -229,14 +229,47 @@ function makeProject(name,template){
  else files["index.html"]="";
  return{id:uid(),name,files,activeFile:"index.html",created:Date.now(),updated:Date.now()};
 }
+
+/* FIX: clear the untouched Hello World demo saved by an older version.
+   Other projects and files are preserved. */
+function removeOldHelloWorldDemo(p){
+ if(!p||p.name!=="Welcome Project"||!p.files||typeof p.files!=="object")return false;
+ const paths=Object.keys(p.files).sort();
+ const html=String(p.files["index.html"]||"");
+ const looksLikeHelloWorld=/hello[\s,]*world!?/i.test(html);
+ const expectedFiles=["index.html","script.js","style.css"];
+ const onlyDefaultFiles=paths.length===3&&expectedFiles.every(path=>paths.includes(path));
+ if(looksLikeHelloWorld&&onlyDefaultFiles){
+  p.name="Code Project";
+  p.files={"index.html":""};
+  p.activeFile="index.html";
+  p.updated=Date.now();
+  return true;
+ }
+ return false;
+}
+
 function loadProjects(){
- try{const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");if(Array.isArray(data)&&data.length)projects=data.filter(p=>p&&p.id&&p.files&&typeof p.files==="object")}catch(e){console.warn(e)}
- if(!projects.length){projects=[makeProject("Code Project","blank")];saveProjects(false)}
- // Migrate only the old untouched demo project, preserving any user-edited files.
- projects.forEach(p=>{if(p.name==="Welcome Project"&&p.files["index.html"]&&/Hello, world!/.test(p.files["index.html"])&&Object.keys(p.files).length===3&&p.files["style.css"]&&p.files["script.js"]){p.name="Code Project";p.files={"index.html":""};p.activeFile="index.html"}});
- const wanted=localStorage.getItem(ACTIVE_KEY);activeProjectId=projects.some(p=>p.id===wanted)?wanted:projects[0].id;
- const p=getProject();activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");
- renderAll();loadEditor();saveProjects(false);
+ try{
+  const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+  if(Array.isArray(data)&&data.length){
+   projects=data.filter(p=>p&&p.id&&p.files&&typeof p.files==="object");
+  }
+ }catch(e){console.warn(e)}
+ if(!projects.length){
+  projects=[makeProject("Code Project","blank")];
+  saveProjects(false);
+ }
+ projects.forEach(removeOldHelloWorldDemo);
+ const wanted=localStorage.getItem(ACTIVE_KEY);
+ activeProjectId=projects.some(p=>p.id===wanted)?wanted:projects[0].id;
+ const p=getProject();
+ activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");
+ renderAll();
+ loadEditor();
+ saveProjects(false);
+ // Always start with a blank preview. The user can press Run or Refresh to render code.
+ $("previewFrame").srcdoc="";
 }
 function saveProjects(showStatus=true){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(projects));if(activeProjectId)localStorage.setItem(ACTIVE_KEY,activeProjectId);if(showStatus){$("saveStatus").textContent="Saved locally";$("saveStatus").style.color="var(--green)"}return true}catch(e){$("saveStatus").textContent="Storage full";toast("Could not save. Export your project to keep a backup.");return false}}
 function getProject(){return projects.find(p=>p.id===activeProjectId)||projects[0]}
@@ -270,7 +303,7 @@ function loadEditor(){
  const p=getProject(),paths=Object.keys(p.files);
  if(p.files[activeFilePath]===undefined)activeFilePath=paths[0]||"index.html";
  if(p.files[activeFilePath]===undefined){p.files["index.html"]="";activeFilePath="index.html"}
- $("codeEditor").value=p.files[activeFilePath]||"";$("languageLabel").textContent=languageFor(activeFilePath);$("aiContextLabel").textContent="Context: "+activeFilePath;renderAll();syncLineNumbers();updateCursor();
+ $("codeEditor").value=p.files[activeFilePath]??"";$("languageLabel").textContent=languageFor(activeFilePath);$("aiContextLabel").textContent="Context: "+activeFilePath;renderAll();syncLineNumbers();updateCursor();
 }
 function switchProject(id){saveCurrentFile();activeProjectId=id;const p=getProject();activeFilePath=p.activeFile&&p.files[p.activeFile]!==undefined?p.activeFile:(Object.keys(p.files)[0]||"index.html");chatHistory=[];$("chatLog").innerHTML='<div class="empty-state" id="chatEmpty"><div class="empty-icon">✧</div><h3>New project conversation</h3><p>Ask the AI about this project.</p></div>';saveProjects();renderAll();loadEditor();toast("Opened "+p.name)}
 function switchFile(path){saveCurrentFile();activeFilePath=path;getProject().activeFile=path;saveProjects();loadEditor()}
@@ -280,17 +313,47 @@ function syncLineNumbers(){const lines=$("codeEditor").value.split("\n").length;
 function updateCursor(){const t=$("codeEditor"),before=t.value.slice(0,t.selectionStart),lines=before.split("\n");$("cursorLabel").textContent="Ln "+lines.length+", Col "+(lines[lines.length-1].length+1)}
 $("codeEditor").addEventListener("click",updateCursor);$("codeEditor").addEventListener("keyup",updateCursor);
 function editorKeydown(e){const t=e.target;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveCurrentFile();saveProjects();toast("Project saved");return}if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();runPreview();return}if(e.key==="Tab"){e.preventDefault();t.setRangeText("  ",t.selectionStart,t.selectionEnd,"end");onEditorInput()}}
-function showView(view){currentView=view;$("previewArea").classList.toggle("show",view==="preview");$("editorTab").classList.toggle("active",view==="editor");$("previewTab").classList.toggle("active",view==="preview");if(view==="preview")runPreview()}
+
+/* FIX: changing views no longer calls runPreview recursively. */
+function showView(view){
+ currentView=view;
+ $("previewArea").classList.toggle("show",view==="preview");
+ $("editorTab").classList.toggle("active",view==="editor");
+ $("previewTab").classList.toggle("active",view==="preview");
+ if(view==="preview"){
+  saveCurrentFile();
+  saveProjects();
+  $("previewFrame").srcdoc=getPreviewHTML();
+ }
+}
 function mobileView(which){mobilePanel=which;$("mobileProjects").classList.toggle("active",which==="projects");$("mobileEditor").classList.toggle("active",which==="editor");$("mobileAI").classList.toggle("active",which==="ai");document.querySelector(".left-panel").style.display=which==="projects"?"flex":"none";document.querySelector(".right-panel").style.display=which==="ai"?"flex":"none";document.querySelector(".center").style.display=which==="editor"?"flex":"none"}
+
+/* FIX: never use CSS or JavaScript as HTML when index.html is empty.
+   Empty HTML means an intentionally blank preview. */
 function getPreviewHTML(){
- const files=getProject().files;let html=files["index.html"]||files[activeFilePath]||"";
+ const files=getProject().files;
+ let html=files["index.html"]!==undefined?String(files["index.html"]):String(files[activeFilePath]||"");
+ if(!html.trim())return "";
  const css=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".css")).map(([,v])=>v).join("\n");
  const js=Object.entries(files).filter(([p])=>p.toLowerCase().endsWith(".js")||p.toLowerCase().endsWith(".mjs")).map(([,v])=>v).join("\n;\n");
  if(css){if(/<\/head>/i.test(html))html=html.replace(/<\/head>/i,`<style>${css.replace(/<\/style/gi,"<\\/style")}</style></head>`);else html=`<style>${css.replace(/<\/style/gi,"<\\/style")}</style>`+html}
  if(js){const script=`<script>${js.replace(/<\/script/gi,"<\\/script")}<\/script>`;if(/<\/body>/i.test(html))html=html.replace(/<\/body>/i,script+"</body>");else html+=script}
  return html;
 }
-function runPreview(){saveCurrentFile();saveProjects();$("previewFrame").srcdoc=getPreviewHTML();if(currentView!=="preview")showView("preview");toast("Preview updated")}
+
+/* FIX: Run and Refresh always rebuild the preview from the current saved code. */
+function runPreview(){
+ saveCurrentFile();
+ saveProjects();
+ $("previewFrame").srcdoc=getPreviewHTML();
+ if(currentView!=="preview"){
+  currentView="preview";
+  $("previewArea").classList.add("show");
+  $("editorTab").classList.remove("active");
+  $("previewTab").classList.add("active");
+ }
+ toast("Preview refreshed");
+}
 function openPreviewTab(){const blob=new Blob([getPreviewHTML()],{type:"text/html"});if(lastPreviewUrl)URL.revokeObjectURL(lastPreviewUrl);lastPreviewUrl=URL.createObjectURL(blob);window.open(lastPreviewUrl,"_blank","noopener")}
 function downloadBlob(content,filename,type="text/plain"){const url=URL.createObjectURL(new Blob([content],{type})),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function downloadStandalone(){saveCurrentFile();downloadBlob(getPreviewHTML(),safeName(getProject().name).replace(/\s+/g,"-")+".html","text/html");toast("Standalone HTML exported")}
@@ -298,7 +361,7 @@ function downloadCurrentFile(){downloadBlob(getProject().files[activeFilePath]||
 async function exportProject(){saveCurrentFile();saveProjects();if(!window.JSZip){toast("ZIP library unavailable.");return}try{const zip=new JSZip(),folder=zip.folder(safeName(getProject().name).replace(/[\\/:*?"<>|]/g,"-"));Object.entries(getProject().files).forEach(([path,content])=>folder.file(path,content));folder.file("README.txt",getProject().name+"\nCreated with CodeStudio AI.\n");const blob=await zip.generateAsync({type:"blob"});downloadBlob(blob,safeName(getProject().name).replace(/\s+/g,"-")+".zip","application/zip");toast("Project ZIP exported")}catch(e){toast("Could not create ZIP: "+e.message)}}
 function formatCode(){const t=$("codeEditor"),ext=getExtension(activeFilePath);if(!["html","htm","css","js","mjs","json"].includes(ext)){toast("Basic formatting is supported for HTML, CSS, JS and JSON.");return}try{if(ext==="json")t.value=JSON.stringify(JSON.parse(t.value),null,2);else{let indent=0,formatted=[];t.value.split("\n").forEach(line=>{let s=line.trim();if(!s)return;if(/^<\/[^>]+/.test(s)||/^[}\]]/.test(s))indent=Math.max(0,indent-1);formatted.push("  ".repeat(indent)+s);const opens=(s.match(/{/g)||[]).length,closes=(s.match(/}/g)||[]).length;if(!/^\/\//.test(s))indent=Math.max(0,indent+opens-closes)});t.value=formatted.join("\n")}onEditorInput();toast("Basic formatting applied")}catch(e){toast("Could not format: "+e.message)}}
 function openNewProject(){$("newProjectName").value="";$("projectTemplate").value="blank";openModal("projectModal");$("newProjectName").focus()}
-function createProject(){const name=safeName($("newProjectName").value);if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast("A project with that name already exists.");return}const p=makeProject(name,$("projectTemplate").value);projects.unshift(p);activeProjectId=p.id;activeFilePath="index.html";saveProjects();renderAll();loadEditor();closeModal("projectModal");showView("editor");toast("Project created")}
+function createProject(){const name=safeName($("newProjectName").value);if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast("A project with that name already exists.");return}const p=makeProject(name,$("projectTemplate").value);projects.unshift(p);activeProjectId=p.id;activeFilePath="index.html";saveProjects();renderAll();loadEditor();closeModal("projectModal");showView("editor");$("previewFrame").srcdoc="";toast("Project created")}
 function openNewFile(){$("newFilePath").value="";$("newFileType").value="custom";openModal("fileModal");$("newFilePath").focus()}
 function suggestFilePath(){const type=$("newFileType").value;if(type!=="custom")$("newFilePath").value=({html:"pages/page.html",css:"style.css",js:"script.js",json:"data.json"})[type]}
 function createFile(){const path=$("newFilePath").value.trim().replace(/\\/g,"/");if(!path||path.startsWith("/")||path.split("/").some(x=>!x||x===".."||x===".")){toast("Enter a valid relative file path.");return}if(getProject().files[path]!==undefined){toast("That file already exists.");return}saveCurrentFile();const ext=getExtension(path);getProject().files[path]=ext==="html"?"":ext==="css"?"":ext==="js"?"":ext==="json"?"{\n  \n}\n":"";activeFilePath=path;getProject().activeFile=path;saveProjects();renderAll();loadEditor();closeModal("fileModal");toast("File added")}
@@ -359,7 +422,6 @@ function parseAIResult(text){
 function applyAIChanges(result){
  if(!result||!Array.isArray(result.edits))return{ok:false,error:"The AI response did not contain a valid edits array."};
  const p=getProject(),updated={...p.files};saveCurrentFile();
- // Rebuild from the latest saved editor value.
  updated[activeFilePath]=$("codeEditor").value;
  for(const edit of result.edits){
   if(!edit||typeof edit.path!=="string")return{ok:false,error:"One proposed edit had no valid file path."};
@@ -404,10 +466,7 @@ async function sendToAI(){
     addAIMessage((result.message||"Changes applied to your project.")+"\n\n**Applied "+applied.count+" edit"+(applied.count===1?"":"s")+" directly to your editor.**");
     toast("AI changes applied");
    }else addAIMessage(result.message||"Done.");
-  }else{
-   // A normal text response is still displayed as Markdown.
-   addAIMessage(answer);
-  }
+  }else addAIMessage(answer);
  }catch(err){addAIMessage("I couldn't complete that request.\n\n**Error:** "+(err.message||"Unknown error")+"\n\nCheck that your Vercel deployment includes `/api/chat` and that `REPLICATE_API_TOKEN` is configured in Vercel Environment Variables.")}
  finally{loading.remove();isThinking=false;$("sendAiBtn").disabled=false;$("sendAiBtn").textContent="↑ Send";$("chatLog").scrollTop=$("chatLog").scrollHeight}
 }
